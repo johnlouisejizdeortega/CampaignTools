@@ -28,7 +28,7 @@ Route::middleware('team.auth')->group(function () {
     Route::get(
         '/',
         function () {
-            return view('main');
+            return \Inertia\Inertia::render('Dashboard');
         }
     );
     Route::post(

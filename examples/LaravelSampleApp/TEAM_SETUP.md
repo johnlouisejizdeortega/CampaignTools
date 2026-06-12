@@ -19,11 +19,11 @@ that lives in the root of this repository.
 | **Pause Campaign** | Pause a live campaign by entering its Customer ID + Campaign ID. |
 | **Optimization suggestions** | Enter a Customer ID to fetch Google's **live recommendations** for the account, each explained in plain English with how to fix it — plus an always-on **optimization playbook** of common problems and fixes. |
 
-The interface uses a modern, minimalist design that follows the
-[shadcn/ui](https://ui.shadcn.com/) visual language (neutral palette, clean
-cards, subtle borders). It's implemented as a self-contained CSS design system
-applied to the Laravel/Blade app — the same look without requiring a separate
-React build.
+The interface is a **React single-page app** built with
+[Inertia.js](https://inertiajs.com/), [Tailwind CSS](https://tailwindcss.com/),
+and [shadcn/ui](https://ui.shadcn.com/) components, served by Laravel. React
+components live in `resources/js/` (pages in `resources/js/Pages`, shadcn
+components in `resources/js/components/ui`), compiled by Vite.
 
 > All data comes straight from the Google Ads API in real time — nothing is
 > stored in a database.
@@ -68,6 +68,7 @@ Both models use the same setup steps below.
 ## Prerequisites
 
 - **PHP 8.2+** and **Composer** ([install guide](https://getcomposer.org/))
+- **Node.js 18+** and **npm** (to build the React frontend)
 - Google Ads API credentials (see "Get your credentials" below)
 
 ---
@@ -86,14 +87,18 @@ cp .env.example .env
 php artisan key:generate
 #    Then edit .env and set a strong TEAM_ACCESS_PASSWORD so users must log in.
 
-# 3. Create the local SQLite file (used only for sessions/cache; no MySQL needed)
+# 3. Build the React frontend
+npm install
+npm run build      # or `npm run dev` for hot reloading while developing
+
+# 4. Create the local SQLite file (used only for sessions/cache; no MySQL needed)
 touch database/database.sqlite
 
-# 4. Add your Google Ads credentials (see next section)
+# 5. Add your Google Ads credentials (see next section)
 cp ../Authentication/google_ads_php.ini ./google_ads_php.ini
 #    ...then edit ./google_ads_php.ini and fill in the INSERT_..._HERE values
 
-# 5. Start the app
+# 6. Start the app
 php artisan serve
 ```
 
@@ -184,6 +189,7 @@ the team, run this on a cloud VM and point a domain at it (ideally behind HTTPS)
 
 | Symptom | Fix |
 |---|---|
+| `Vite manifest not found` / unstyled page | The frontend hasn't been built. Run `npm install && npm run build` (or `npm run dev`). |
 | `Class ...V24... not found` | Wrong library version installed. This app needs `googleads/google-ads-php ^33.0` (it ships API v20–v24). Re-run `composer update`. |
 | `401 invalid_client` / `OAuth client was not found` | The credentials in `google_ads_php.ini` are still placeholders or wrong. |
 | `Permission denied` writing logs | `chmod -R 775 storage bootstrap/cache` |

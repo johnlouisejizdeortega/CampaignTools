@@ -30,7 +30,8 @@ use Google\Ads\GoogleAds\V24\Services\MutateCampaignsRequest;
 use Google\Ads\GoogleAds\V24\Services\SearchGoogleAdsRequest;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 use Throwable;
 
 class GoogleAdsApiController extends Controller
@@ -149,12 +150,12 @@ class GoogleAdsApiController extends Controller
      *
      * @param Request $request the HTTP request
      * @param GoogleAdsClient $googleAdsClient the Google Ads API client
-     * @return View the view to redirect to after processing
+     * @return InertiaResponse the Inertia page response
      */
     public function showReportAction(
         Request $request,
         GoogleAdsClient $googleAdsClient
-    ): View {
+    ): InertiaResponse {
         if ($request->method() === 'POST') {
             // Retrieves the form inputs.
             $customerId = $request->input('customerId');
@@ -295,11 +296,11 @@ class GoogleAdsApiController extends Controller
         // future page navigation.
         $request->session()->put('pageTokens', $pageTokens);
 
-        // Redirects to the view that displays fields of paginated report results.
-        return view(
-            'report-result',
-            compact('paginatedResults', 'selectedFields')
-        );
+        // Renders the page that displays fields of paginated report results.
+        return Inertia::render('ReportResult', [
+            'results' => $paginatedResults,
+            'selectedFields' => $selectedFields,
+        ]);
     }
 
     /**
@@ -309,12 +310,12 @@ class GoogleAdsApiController extends Controller
      *
      * @param Request $request the HTTP request
      * @param GoogleAdsClient $googleAdsClient the Google Ads API client
-     * @return View the recommendations view
+     * @return InertiaResponse the Inertia page response
      */
     public function showRecommendationsAction(
         Request $request,
         GoogleAdsClient $googleAdsClient
-    ): View {
+    ): InertiaResponse {
         $customerId = $request->input('customerId');
         $recommendations = [];
         $error = null;
@@ -355,10 +356,11 @@ class GoogleAdsApiController extends Controller
             $error = $e->getMessage();
         }
 
-        return view(
-            'recommendations-result',
-            compact('customerId', 'recommendations', 'error')
-        );
+        return Inertia::render('RecommendationsResult', [
+            'customerId' => $customerId,
+            'recommendations' => $recommendations,
+            'error' => $error,
+        ]);
     }
 
     /**
@@ -366,12 +368,12 @@ class GoogleAdsApiController extends Controller
      *
      * @param Request $request the HTTP request
      * @param GoogleAdsClient $googleAdsClient the Google Ads API client
-     * @return View the view to redirect to after processing
+     * @return InertiaResponse the Inertia page response
      */
     public function pauseCampaignAction(
         Request $request,
         GoogleAdsClient $googleAdsClient
-    ): View {
+    ): InertiaResponse {
         // Retrieves the form inputs.
         $customerId = $request->input('customerId');
         $campaignId = $request->input('campaignId');
@@ -414,9 +416,9 @@ class GoogleAdsApiController extends Controller
             true
         );
 
-        return view(
-            'pause-result',
-            compact('customerId', 'campaign')
-        );
+        return Inertia::render('PauseResult', [
+            'customerId' => $customerId,
+            'campaign' => $campaign,
+        ]);
     }
 }

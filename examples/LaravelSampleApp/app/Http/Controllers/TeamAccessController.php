@@ -20,7 +20,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
+use Inertia\Inertia;
 
 /**
  * Handles the shared-password login flow that gates the application for team
@@ -33,7 +33,7 @@ class TeamAccessController extends Controller
      * is already authenticated, sends them straight to the dashboard.
      *
      * @param Request $request the HTTP request
-     * @return View|RedirectResponse the login view or a redirect
+     * @return \Inertia\Response|RedirectResponse the login page or a redirect
      */
     public function showLogin(Request $request)
     {
@@ -43,7 +43,7 @@ class TeamAccessController extends Controller
         ) {
             return redirect('/');
         }
-        return view('login');
+        return Inertia::render('Login');
     }
 
     /**

@@ -12,7 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# A self-contained image that serves the Google Ads Team Dashboard over Apache.
+# --- Stage 1: build the React/Inertia frontend (Vite) ---
+FROM node:20-alpine AS frontend
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+# --- Stage 2: serve the app over Apache ---
+# A self-contained image that serves the Google Ads Team Dashboard.
 FROM php:8.3-apache
 
 # System packages and PHP extensions the app needs (bcmath is used by the
@@ -37,6 +46,9 @@ COPY composer.json composer.lock ./
 RUN composer install --no-dev --no-interaction --prefer-dist --no-scripts --optimize-autoloader
 
 COPY . /var/www/html
+# Bring in the compiled frontend assets (and SSR bundle) from the build stage.
+COPY --from=frontend /app/public/build /var/www/html/public/build
+COPY --from=frontend /app/bootstrap/ssr /var/www/html/bootstrap/ssr
 RUN composer dump-autoload --optimize \
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache

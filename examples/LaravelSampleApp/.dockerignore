@@ -1,5 +1,8 @@
 vendor
 node_modules
+public/build
+public/hot
+bootstrap/ssr
 .env
 .env.backup
 google_ads_php.ini
