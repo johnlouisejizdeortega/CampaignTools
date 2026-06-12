@@ -14,28 +14,29 @@
   limitations under the License.
 -->
 @extends('layouts.default')
+@section('title', 'Campaign paused')
 @section('content')
-    <h2>Result</h2>
-    <form>
-        <div class="form-group row">
-            <label class="col-sm-2 col-form-label">Campaign ID</label>
-            <div class="col-sm-4">
-                <input readonly type="text" class="form-control" value="{{ $campaign['id'] }}">
+    <div class="page-header">
+        <h1 class="page-title">Campaign paused</h1>
+        <p class="page-subtitle">The campaign below is now paused and will stop spending.</p>
+    </div>
+
+    <div class="card" style="max-width:560px;">
+        <div class="card-content">
+            <div class="field">
+                <span class="label">Campaign ID</span>
+                <div class="input" style="display:flex;align-items:center;background:var(--muted);">{{ $campaign['id'] }}</div>
+            </div>
+            <div class="field">
+                <span class="label">Campaign name</span>
+                <div class="input" style="display:flex;align-items:center;background:var(--muted);">{{ $campaign['name'] }}</div>
+            </div>
+            <div class="field mb-0">
+                <span class="label">Status</span>
+                <div><span class="badge badge-warning">{{ $campaign['status'] }}</span></div>
             </div>
         </div>
-        <div class="form-group row">
-            <label class="col-sm-2 col-form-label">Campaign Name</label>
-            <div class="col-sm-4">
-                <input readonly type="text" class="form-control" value="{{ $campaign['name'] }}">
-            </div>
-        </div>
-        <div class="form-group row">
-            <label class="col-sm-2 col-form-label">Campaign Status</label>
-            <div class="col-sm-4">
-                <input readonly type="text" class="form-control" value="{{ $campaign['status'] }}">
-            </div>
-        </div>
-    </form>
+    </div>
 
     @include('includes.result-back')
 @stop

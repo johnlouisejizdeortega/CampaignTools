@@ -13,20 +13,18 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 -->
-@extends('layouts.default')
-@section('title', 'Dashboard')
-@section('content')
-    <div class="page-header">
-        <h1 class="page-title">Dashboard</h1>
-        <p class="page-subtitle">Manage campaigns, pull reports, and get optimization suggestions.</p>
-    </div>
-
-    <div class="stack">
-        @include('contents.instructions')
-        <div class="grid-2">
-            @include('contents.show-report-form')
-            @include('contents.pause-campaign-form')
-        </div>
-        @include('contents.optimization')
-    </div>
-@endsection
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
+    <title>@yield('title', 'Sign in')</title>
+</head>
+<body>
+    @yield('content')
+</body>
+</html>

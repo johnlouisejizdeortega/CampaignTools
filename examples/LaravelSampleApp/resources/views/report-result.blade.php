@@ -14,31 +14,33 @@
   limitations under the License.
 -->
 @extends('layouts.default')
+@section('title', 'Report')
 @section('content')
-    <h2>Result</h2>
-    @include('includes.result-back')
-    <div class="container-fluid mt-2">
+    <div class="page-header">
+        <h1 class="page-title">Report</h1>
+        <p class="page-subtitle">Live results from the Google Ads API.</p>
+    </div>
+
+    <div class="table-wrap">
         <table class="table">
             <thead>
             <tr>
-                <th scope="col">#</th>
+                <th>#</th>
                 @foreach ($selectedFields as $field)
-                    <th scope="col">{{ $field }}</th>
+                    <th>{{ $field }}</th>
                 @endforeach
             </tr>
             </thead>
             <tbody>
             @forelse ($paginatedResults as $index => $row)
                 <tr>
-                    <th scope="row">{{ $index + 1 }}</th>
+                    <td>{{ $index + 1 }}</td>
                     @foreach ($selectedFields as $field)
-                        <td>{{
-                            $row[explode(".", $field)[0]][explode(".",$field)[1]] ?? 'N/A' }}</td>
+                        <td>{{ $row[explode('.', $field)[0]][explode('.', $field)[1]] ?? 'N/A' }}</td>
                     @endforeach
                 </tr>
             @empty
-                <tr class="text-center"><td colspan="{{ count($selectedFields) + 1 }}">
-                        <strong>No data for this query.</strong></td></tr>
+                <tr><td colspan="{{ count($selectedFields) + 1 }}" style="text-align:center;color:var(--muted-foreground);">No data for this query.</td></tr>
             @endforelse
             </tbody>
         </table>

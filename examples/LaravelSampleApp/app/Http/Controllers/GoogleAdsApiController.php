@@ -22,6 +22,7 @@ use Google\Ads\GoogleAds\Lib\V24\GoogleAdsClient;
 use Google\Ads\GoogleAds\Util\FieldMasks;
 use Google\Ads\GoogleAds\Util\V24\ResourceNames;
 use Google\Ads\GoogleAds\V24\Enums\CampaignStatusEnum\CampaignStatus;
+use Google\Ads\GoogleAds\V24\Enums\RecommendationTypeEnum\RecommendationType;
 use Google\Ads\GoogleAds\V24\Resources\Campaign;
 use Google\Ads\GoogleAds\V24\Services\CampaignOperation;
 use Google\Ads\GoogleAds\V24\Services\GoogleAdsRow;
@@ -30,6 +31,7 @@ use Google\Ads\GoogleAds\V24\Services\SearchGoogleAdsRequest;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\View\View;
+use Throwable;
 
 class GoogleAdsApiController extends Controller
 {
@@ -44,6 +46,103 @@ class GoogleAdsApiController extends Controller
     private const RESULTS_LIMIT = 1000;
     // Google Ads API default page size.
     private const DEFAULT_PAGE_SIZE = 10000;
+
+    // Maps each Google Ads recommendation type to plain-English guidance shown to
+    // the user: a human-readable title, why it matters, and how to act on it. The
+    // 'badge' controls the colored severity pill in the UI.
+    private const RECOMMENDATION_GUIDANCE = [
+        'CAMPAIGN_BUDGET' => [
+            'title' => 'Raise a budget-limited campaign',
+            'why' => 'A campaign is losing impressions because its daily budget runs out early.',
+            'fix' => 'Increase the daily budget on this campaign, or shift spend from a lower-performing one.',
+            'badge' => 'info',
+        ],
+        'KEYWORD' => [
+            'title' => 'Add suggested keywords',
+            'why' => 'Relevant searches exist that your current keywords are not capturing.',
+            'fix' => 'Review the suggested keywords and add the ones that match your offering.',
+            'badge' => 'info',
+        ],
+        'TEXT_AD' => [
+            'title' => 'Add another ad to an ad group',
+            'why' => 'Ad groups with too few ads have nothing to test and tend to stagnate.',
+            'fix' => 'Add the suggested ad so Google can rotate and optimize creatives.',
+            'badge' => 'warning',
+        ],
+        'RESPONSIVE_SEARCH_AD' => [
+            'title' => 'Add a responsive search ad',
+            'why' => 'Responsive search ads adapt headlines and descriptions to each query and usually lift CTR.',
+            'fix' => 'Create the suggested responsive search ad with strong, distinct headlines.',
+            'badge' => 'warning',
+        ],
+        'RESPONSIVE_SEARCH_AD_ASSET' => [
+            'title' => 'Improve responsive search ad strength',
+            'why' => 'Low Ad Strength limits reach and performance.',
+            'fix' => 'Add the suggested headlines/descriptions to raise Ad Strength to "Good" or "Excellent".',
+            'badge' => 'warning',
+        ],
+        'TARGET_CPA_OPT_IN' => [
+            'title' => 'Switch to Target CPA bidding',
+            'why' => 'You have enough conversion data for automated bidding to outperform manual bids.',
+            'fix' => 'Adopt Target CPA at the suggested target, then let it learn for ~2 weeks.',
+            'badge' => 'info',
+        ],
+        'MAXIMIZE_CONVERSIONS_OPT_IN' => [
+            'title' => 'Switch to Maximize Conversions',
+            'why' => 'Automated bidding can capture more conversions within your budget.',
+            'fix' => 'Enable Maximize Conversions and monitor cost-per-conversion as it learns.',
+            'badge' => 'info',
+        ],
+        'MAXIMIZE_CLICKS_OPT_IN' => [
+            'title' => 'Switch to Maximize Clicks',
+            'why' => 'Helpful when the goal is traffic and manual bids are under-delivering.',
+            'fix' => 'Enable Maximize Clicks, optionally with a max CPC cap.',
+            'badge' => 'info',
+        ],
+        'ENHANCED_CPC_OPT_IN' => [
+            'title' => 'Enable Enhanced CPC',
+            'why' => 'Adjusts your manual bids in real time toward conversions.',
+            'fix' => 'Turn on Enhanced CPC as a low-risk step toward automated bidding.',
+            'badge' => 'info',
+        ],
+        'OPTIMIZE_AD_ROTATION' => [
+            'title' => 'Optimize ad rotation',
+            'why' => 'Rotating ads evenly prevents Google from favoring your best performers.',
+            'fix' => 'Set ad rotation to "Optimize" so higher-performing ads show more often.',
+            'badge' => 'warning',
+        ],
+        'SEARCH_PARTNERS_OPT_IN' => [
+            'title' => 'Expand to Search Partners',
+            'why' => 'Additional, often cheaper, search inventory beyond Google Search.',
+            'fix' => 'Opt in to Search Partners and watch performance for two weeks.',
+            'badge' => 'info',
+        ],
+        'SITELINK_ASSET' => [
+            'title' => 'Add sitelink assets',
+            'why' => 'Sitelinks make ads larger and more clickable, lifting CTR.',
+            'fix' => 'Add at least four relevant sitelinks pointing to key pages.',
+            'badge' => 'warning',
+        ],
+        'CALLOUT_ASSET' => [
+            'title' => 'Add callout assets',
+            'why' => 'Callouts highlight selling points and improve ad quality.',
+            'fix' => 'Add four or more callouts (e.g. "Free shipping", "24/7 support").',
+            'badge' => 'warning',
+        ],
+        'MOVE_UNUSED_BUDGET' => [
+            'title' => 'Move unused budget',
+            'why' => 'Budget sits idle in one campaign while another is constrained.',
+            'fix' => 'Reallocate the unused budget to the budget-limited campaign.',
+            'badge' => 'info',
+        ],
+    ];
+
+    // Shown when a recommendation type has no specific entry above.
+    private const RECOMMENDATION_GUIDANCE_DEFAULT = [
+        'why' => 'Google has identified an opportunity to improve this account.',
+        'fix' => 'Open this recommendation in the Google Ads UI to review and apply it.',
+        'badge' => 'info',
+    ];
 
     /**
      * Controls a POST or GET request submitted in the context of the "Show Report" form.
@@ -200,6 +299,65 @@ class GoogleAdsApiController extends Controller
         return view(
             'report-result',
             compact('paginatedResults', 'selectedFields')
+        );
+    }
+
+    /**
+     * Controls a POST request submitted in the context of the "Optimization
+     * suggestions" form. Fetches the account's live recommendations from the
+     * Google Ads API and pairs each one with plain-English guidance.
+     *
+     * @param Request $request the HTTP request
+     * @param GoogleAdsClient $googleAdsClient the Google Ads API client
+     * @return View the recommendations view
+     */
+    public function showRecommendationsAction(
+        Request $request,
+        GoogleAdsClient $googleAdsClient
+    ): View {
+        $customerId = $request->input('customerId');
+        $recommendations = [];
+        $error = null;
+
+        try {
+            // Retrieves all active recommendations for the account.
+            $query = 'SELECT recommendation.type, recommendation.campaign '
+                . 'FROM recommendation';
+            $response = $googleAdsClient->getGoogleAdsServiceClient()->search(
+                SearchGoogleAdsRequest::build($customerId, $query)
+            );
+
+            foreach ($response->iterateAllElements() as $googleAdsRow) {
+                /** @var GoogleAdsRow $googleAdsRow */
+                $recommendation = $googleAdsRow->getRecommendation();
+                $typeName = RecommendationType::name($recommendation->getType());
+                $guidance = self::RECOMMENDATION_GUIDANCE[$typeName]
+                    ?? self::RECOMMENDATION_GUIDANCE_DEFAULT;
+
+                // Extracts the campaign ID from the resource name when present,
+                // e.g. "customers/123/campaigns/456" -> "456".
+                $campaign = $recommendation->getCampaign();
+                $campaignId = $campaign ? substr($campaign, strrpos($campaign, '/') + 1) : null;
+
+                $recommendations[] = [
+                    'type' => $typeName,
+                    'title' => $guidance['title'] ?? ucwords(strtolower(str_replace('_', ' ', $typeName))),
+                    'why' => $guidance['why'],
+                    'fix' => $guidance['fix'],
+                    'badge' => $guidance['badge'],
+                    'campaignId' => $campaignId,
+                ];
+            }
+        } catch (Throwable $e) {
+            // Surfaces a friendly message but still shows the static playbook so
+            // the page is useful even when the API call cannot be made (e.g.
+            // missing credentials or an invalid customer ID).
+            $error = $e->getMessage();
+        }
+
+        return view(
+            'recommendations-result',
+            compact('customerId', 'recommendations', 'error')
         );
     }
 

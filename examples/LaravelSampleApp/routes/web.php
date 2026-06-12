@@ -40,4 +40,8 @@ Route::middleware('team.auth')->group(function () {
         'show-report',
         'GoogleAdsApiController@showReportAction'
     );
+    Route::post(
+        'recommendations',
+        'GoogleAdsApiController@showRecommendationsAction'
+    );
 });

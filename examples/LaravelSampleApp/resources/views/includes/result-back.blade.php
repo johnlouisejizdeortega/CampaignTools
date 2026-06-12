@@ -13,4 +13,4 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 -->
-<div class="text-right"><a href="/" class="btn btn-secondary" role="button">Back to Main Page</a></div>
+<div class="mt-2"><a href="/" class="btn btn-outline btn-sm">&larr; Back to dashboard</a></div>

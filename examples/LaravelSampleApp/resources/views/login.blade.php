@@ -13,32 +13,40 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 -->
-@extends('layouts.default')
+@extends('layouts.auth')
+@section('title', 'Sign in')
 @section('content')
-    <div class="row justify-content-center mt-4">
-        <div class="col-md-5">
+    <div class="login-wrap">
+        <div class="login-card">
+            <div class="login-brand">
+                <span class="brand-logo">Ads</span>
+                <span>Google Ads Dashboard</span>
+            </div>
             <div class="card">
-                <div class="card-header">Team sign in</div>
-                <div class="card-body">
-                    <p class="text-muted">
-                        Enter the team access password to use the Google Ads dashboard.
-                    </p>
+                <div class="card-header">
+                    <h1 class="card-title">Sign in</h1>
+                    <p class="card-description">Enter the team password to continue.</p>
+                </div>
+                <div class="card-content">
                     @if ($errors->any())
-                        <div class="alert alert-danger">
+                        <div class="alert alert-destructive mt-1" style="margin-bottom:1rem;">
                             {{ $errors->first('password') }}
                         </div>
                     @endif
                     <form method="POST" action="{{ route('login.submit') }}">
                         @csrf
-                        <div class="form-group">
-                            <label for="password">Password</label>
-                            <input type="password" class="form-control" id="password"
-                                   name="password" autofocus required>
+                        <div class="field">
+                            <label class="label" for="password">Password</label>
+                            <input type="password" class="input" id="password"
+                                   name="password" placeholder="••••••••" autofocus required>
                         </div>
-                        <button type="submit" class="btn btn-primary">Sign in</button>
+                        <button type="submit" class="btn btn-primary w-full">Sign in</button>
                     </form>
                 </div>
             </div>
+            <p class="text-muted mt-2" style="text-align:center;font-size:0.8rem;">
+                Internal tool · Access is restricted to your team.
+            </p>
         </div>
     </div>
 @endsection

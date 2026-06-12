@@ -13,5 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 -->
-<p class="text-left m-1"><em>Need help on Google Ads API? Contact us
-        <a href="https://groups.google.com/forum/#!forum/adwords-api" target="_blank">here</a>.</em></p>
+<footer class="footer">
+    Built on the Google Ads API · Need help? Visit the
+    <a href="https://groups.google.com/forum/#!forum/adwords-api" target="_blank">support forum</a>.
+</footer>

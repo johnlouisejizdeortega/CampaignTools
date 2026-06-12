@@ -13,21 +13,11 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 -->
-<h2>Steps</h2>
-<ol>
-    <li>
-        Make sure you have an <a href="https://developers.google.com/google-ads/api/docs/first-call/oauth-cloud-project"
-        target="_blank">OAuth2 client ID and secret</a>, <a href="https://developers.google.com/google-ads/api/docs/first-call/dev-token" target="_blank">a developer token</a>,
-        and <a href="https://developers.google.com/google-ads/api/docs/first-call/refresh-token"
-        target="_blank">a refresh token</a> ready. If not, follow <a href="https://developers.google.com/google-ads/api/docs/first-call/overview"
-        target="_blank">these instructions</a> to get them.
-    </li>
-    <li>
-        Copy your configured <a href="https://github.com/googleads/google-ads-php/blob/master/examples/Authentication/google_ads_php.ini"
-        target="_blank"><code>google_ads_php.ini</code></a>, needed for the Google Ads API client library for PHP, to the
-        root directory of this sample app.
-    </li>
-    <li>
-        That's it!
-    </li>
-</ol>
+<div class="alert alert-muted">
+    <span>
+        Enter a 10-digit <strong>Customer ID</strong> (no dashes) in any panel below.
+        Connecting an account requires a configured
+        <a href="https://developers.google.com/google-ads/api/docs/first-call/overview" target="_blank">google_ads_php.ini</a>
+        on the server — see <code>TEAM_SETUP.md</code>.
+    </span>
+</div>

@@ -15,38 +15,25 @@
 -->
 <div class="card">
     <div class="card-header">
-        Pause a campaign of the specified customer ID
+        <h2 class="card-title">Pause a campaign</h2>
+        <p class="card-description">Temporarily stop a live campaign from spending.</p>
     </div>
-    <div class="card-body">
+    <div class="card-content">
         <form action="{{ url('pause-campaign') }}" method="POST">
             {{ csrf_field() }}
-            <div class="form-group row">
-                <label for="customerId" class="col-sm-2 col-form-label">Customer ID</label>
-                <div class="col-sm-4">
-                    <input type="text" class="form-control" id="customerId" name="customerId"
-                           aria-describedby="customerIdHelp"
-                           placeholder="Enter your customer ID" required>
-                    <small id="customerIdHelp" class="form-text text-muted">The ID of the
-                        customer account to pause the campaign from, e.g., 1234567890.
-                    </small>
-                </div>
+            <div class="field">
+                <label class="label" for="pauseCustomerId">Customer ID</label>
+                <input type="text" class="input" id="pauseCustomerId" name="customerId"
+                       placeholder="1234567890" required>
+                <span class="hint">Your account ID, without dashes.</span>
             </div>
-            <div class="form-group row">
-                <label for="campaignId" class="col-sm-2 col-form-label">Campaign ID</label>
-                <div class="col-sm-4">
-                    <input type="text" class="form-control" id="campaignId" name="campaignId"
-                           aria-describedby="campaignIdHelp"
-                           placeholder="Enter your campaign ID" required>
-                    <small id="campaignIdHelp" class="form-text text-muted">The ID of the
-                        campaign to pause, e.g., 1234567890.
-                    </small>
-                </div>
+            <div class="field">
+                <label class="label" for="campaignId">Campaign ID</label>
+                <input type="text" class="input" id="campaignId" name="campaignId"
+                       placeholder="1234567890" required>
+                <span class="hint">The campaign you want to pause.</span>
             </div>
-            <div class="form-group row">
-                <div class="col-sm-6">
-                    <button type="submit" class="btn btn-primary">Pause Campaign</button>
-                </div>
-            </div>
+            <button type="submit" class="btn btn-primary">Pause campaign</button>
         </form>
     </div>
 </div>

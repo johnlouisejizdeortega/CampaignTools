@@ -20,6 +20,7 @@ namespace App\Providers;
 
 use Google\Ads\GoogleAds\Lib\V24\GoogleAdsClientBuilder;
 use Google\Ads\GoogleAds\Lib\OAuth2TokenBuilder;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -50,6 +51,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        //
+        // Emit pagination markup (ul.pagination > li.active/disabled) that the
+        // dashboard's CSS styles.
+        Paginator::useBootstrapFour();
     }
 }

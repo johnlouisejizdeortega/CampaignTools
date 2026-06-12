@@ -13,12 +13,17 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 -->
-@if (session('team_authenticated') === true)
-    <form method="POST" action="{{ route('logout') }}" class="float-right">
-        @csrf
-        <button type="submit" class="btn btn-sm btn-outline-secondary">Sign out</button>
-    </form>
-@endif
-<h1><span style="color:#4D8CF6">Google Ads</span> <span style="color:#16A05D">API</span> Sample
-    Application</h1>
-<p class="lead">A demo application showing how to use Google Ads API within Laravel</p>
+<header class="topbar">
+    <div class="topbar-inner">
+        <a href="/" class="brand">
+            <span class="brand-logo">Ads</span>
+            <span>Google Ads Dashboard</span>
+        </a>
+        @if (session('team_authenticated') === true)
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit" class="btn btn-outline btn-sm">Sign out</button>
+            </form>
+        @endif
+    </div>
+</header>

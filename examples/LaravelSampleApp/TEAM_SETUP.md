@@ -17,6 +17,13 @@ that lives in the root of this repository.
 | **Team login** | A shared-password sign-in gates the whole app. Set `TEAM_ACCESS_PASSWORD` and share it with your team. |
 | **Show Report** | Pull a live report for a Customer ID. Choose report type (campaign or customer), a date range (Yesterday, Last 7 days, Last week, Last month) and metrics (impressions, clicks, CTR). Results are paginated. |
 | **Pause Campaign** | Pause a live campaign by entering its Customer ID + Campaign ID. |
+| **Optimization suggestions** | Enter a Customer ID to fetch Google's **live recommendations** for the account, each explained in plain English with how to fix it — plus an always-on **optimization playbook** of common problems and fixes. |
+
+The interface uses a modern, minimalist design that follows the
+[shadcn/ui](https://ui.shadcn.com/) visual language (neutral palette, clean
+cards, subtle borders). It's implemented as a self-contained CSS design system
+applied to the Laravel/Blade app — the same look without requiring a separate
+React build.
 
 > All data comes straight from the Google Ads API in real time — nothing is
 > stored in a database.
@@ -132,6 +139,34 @@ accounts through a manager account, also uncomment and set `loginCustomerId`.
   for production.
 
 ---
+
+## Hosting with Docker (recommended — one command)
+
+The easiest way to make the dashboard available to everyone. Your teammates only
+need the URL; the server runs in a container with no manual PHP/Composer setup.
+
+On any machine with Docker installed:
+
+```bash
+cd examples/LaravelSampleApp
+
+# 1. Put your configured credentials file next to docker-compose.yml
+cp ../Authentication/google_ads_php.ini ./google_ads_php.ini
+#    ...edit it and fill in your developer token + OAuth values.
+
+# 2. Choose the team password (either edit docker-compose.yml, or:)
+export TEAM_ACCESS_PASSWORD="your-strong-password"
+
+# 3. Build and start
+docker compose up -d --build
+```
+
+Then open **http://localhost:8080** (or `http://<server-ip>:8080`). To deploy for
+the team, run this on a cloud VM and point a domain at it (ideally behind HTTPS).
+
+- The credentials file is mounted **read-only** and never baked into the image.
+- `APP_DEBUG` is `false` and `APP_ENV` is `production` by default.
+- Update with `docker compose up -d --build`; stop with `docker compose down`.
 
 ## Hosting it for the team (Model A) — quick options
 
