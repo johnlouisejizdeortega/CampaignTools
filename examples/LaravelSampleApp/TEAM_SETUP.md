@@ -14,6 +14,7 @@ that lives in the root of this repository.
 
 | Feature | Description |
 |---|---|
+| **Team login** | A shared-password sign-in gates the whole app. Set `TEAM_ACCESS_PASSWORD` and share it with your team. |
 | **Show Report** | Pull a live report for a Customer ID. Choose report type (campaign or customer), a date range (Yesterday, Last 7 days, Last week, Last month) and metrics (impressions, clicks, CTR). Results are paginated. |
 | **Pause Campaign** | Pause a live campaign by entering its Customer ID + Campaign ID. |
 
@@ -21,6 +22,20 @@ that lives in the root of this repository.
 > stored in a database.
 
 ---
+
+## Team login (shared password)
+
+The app is gated by a **single shared password** so you can safely host it as one
+link for the whole team — no per-user accounts or database required.
+
+- Set `TEAM_ACCESS_PASSWORD` in your `.env` to any strong value. Everyone on the
+  team uses that one password to sign in at `/login`.
+- A **Sign out** button appears in the header once signed in.
+- Leave `TEAM_ACCESS_PASSWORD` **empty** to disable the gate (handy for local
+  development only — never do this on a hosted instance).
+
+To change the password, edit `TEAM_ACCESS_PASSWORD` in `.env`, then run
+`php artisan config:clear` and restart the app.
 
 ## How teammates access it (two models)
 
@@ -62,6 +77,7 @@ composer install --ignore-platform-req=ext-grpc --ignore-platform-req=ext-bcmath
 # 2. Create your environment file and an app key
 cp .env.example .env
 php artisan key:generate
+#    Then edit .env and set a strong TEAM_ACCESS_PASSWORD so users must log in.
 
 # 3. Create the local SQLite file (used only for sessions/cache; no MySQL needed)
 touch database/database.sqlite

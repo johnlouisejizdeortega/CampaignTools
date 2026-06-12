@@ -244,5 +244,19 @@ return [
 
     ],
 
-    'google_ads_php_path' => realpath(base_path('google_ads_php.ini'))
+    'google_ads_php_path' => realpath(base_path('google_ads_php.ini')),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Team Access Password
+    |--------------------------------------------------------------------------
+    |
+    | A single shared password that gates the application for team use. When set
+    | (via the TEAM_ACCESS_PASSWORD environment variable), visitors must sign in
+    | before they can view reports or pause campaigns. Leave it empty to disable
+    | the login gate (e.g. for local development).
+    |
+    */
+
+    'team_access_password' => env('TEAM_ACCESS_PASSWORD', ''),
 ];

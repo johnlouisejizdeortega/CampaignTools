@@ -16,18 +16,28 @@
  * limitations under the License.
  */
 
-Route::get(
-    '/',
-    function () {
-        return view('main');
-    }
-);
-Route::post(
-    'pause-campaign',
-    'GoogleAdsApiController@pauseCampaignAction'
-);
-Route::match(
-    ['get', 'post'],
-    'show-report',
-    'GoogleAdsApiController@showReportAction'
-);
+// Shared-password login flow that gates the application for team use. These
+// routes are intentionally left outside the 'team.auth' middleware group.
+Route::get('login', 'TeamAccessController@showLogin')->name('login');
+Route::post('login', 'TeamAccessController@login')->name('login.submit');
+Route::post('logout', 'TeamAccessController@logout')->name('logout');
+
+// Application routes. Protected by the team password when TEAM_ACCESS_PASSWORD
+// is configured (see App\Http\Middleware\TeamAuthenticate).
+Route::middleware('team.auth')->group(function () {
+    Route::get(
+        '/',
+        function () {
+            return view('main');
+        }
+    );
+    Route::post(
+        'pause-campaign',
+        'GoogleAdsApiController@pauseCampaignAction'
+    );
+    Route::match(
+        ['get', 'post'],
+        'show-report',
+        'GoogleAdsApiController@showReportAction'
+    );
+});
