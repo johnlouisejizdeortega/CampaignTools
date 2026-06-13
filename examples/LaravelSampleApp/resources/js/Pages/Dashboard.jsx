@@ -1,5 +1,5 @@
 import { Head, useForm } from '@inertiajs/react';
-import { Sparkles } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/select';
 import Tip from '@/components/Tip';
 import { playbook } from '@/data/playbook';
+import { industries } from '@/data/industries';
 
 function ShowReportForm() {
     const form = useForm({
@@ -167,23 +168,28 @@ function PauseCampaignForm() {
 }
 
 function OptimizationPanel() {
-    const form = useForm({ customerId: '' });
+    const form = useForm({ customerId: '', industry: 'none' });
     const submit = (e) => {
         e.preventDefault();
-        form.post('/recommendations');
+        form
+            .transform((data) => ({
+                customerId: data.customerId,
+                industry: data.industry === 'none' ? '' : data.industry,
+            }))
+            .post('/recommendations');
     };
     return (
         <Card>
             <CardHeader>
                 <CardTitle>
                     Optimization suggestions
-                    <Badge variant="info">
-                        <Sparkles className="mr-1 h-3 w-3" /> AI-assisted
+                    <Badge variant="secondary">
+                        <ShieldCheck className="mr-1 h-3 w-3" /> Rules-based · sourced
                     </Badge>
                 </CardTitle>
                 <CardDescription>
-                    Fetch Google's live recommendations for an account, with plain-English guidance
-                    on what to do. Then use the playbook below to fix common issues.
+                    A deterministic analysis of your real account data plus Google's own
+                    recommendations — every finding cites an official source. No AI.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -198,7 +204,19 @@ function OptimizationPanel() {
                             required
                         />
                     </div>
-                    <Button type="submit" disabled={form.processing}>Get suggestions</Button>
+                    <div className="w-full space-y-2 sm:max-w-xs">
+                        <Label>Industry (optional, for benchmarks)</Label>
+                        <Select value={form.data.industry} onValueChange={(v) => form.setData('industry', v)}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="none">No benchmark</SelectItem>
+                                {industries.map((name) => (
+                                    <SelectItem key={name} value={name}>{name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <Button type="submit" disabled={form.processing}>Analyze</Button>
                 </form>
 
                 <div>

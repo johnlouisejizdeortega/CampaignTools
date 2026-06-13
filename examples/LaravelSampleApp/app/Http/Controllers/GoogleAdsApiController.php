@@ -18,6 +18,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Optimization\AccountSignalsFetcher;
+use App\Optimization\OptimizationAnalyzer;
 use Google\Ads\GoogleAds\Lib\V24\GoogleAdsClient;
 use Google\Ads\GoogleAds\Util\FieldMasks;
 use Google\Ads\GoogleAds\Util\V24\ResourceNames;
@@ -317,7 +319,11 @@ class GoogleAdsApiController extends Controller
         GoogleAdsClient $googleAdsClient
     ): InertiaResponse {
         $customerId = $request->input('customerId');
+        $industry = $request->input('industry');
         $recommendations = [];
+        $findings = [];
+        $optimizationScore = null;
+        $benchmark = null;
         $error = null;
 
         try {
@@ -349,6 +355,18 @@ class GoogleAdsApiController extends Controller
                     'campaignId' => $campaignId,
                 ];
             }
+
+            // Runs the deterministic, source-cited rule engine over the account's
+            // real signals (conversion tracking, optimization score, impression
+            // share, Ad Strength, CTR vs the account benchmark).
+            $signals = (new AccountSignalsFetcher($googleAdsClient))->fetch($customerId);
+            $optimizationScore = $signals['optimizationScore'];
+            $findings = OptimizationAnalyzer::fromJsonFile(
+                resource_path('knowledge/rules.json')
+            )->analyze($signals);
+
+            // Optional directional comparison against industry benchmarks.
+            $benchmark = $this->buildBenchmark($industry, $signals['account'] ?? null);
         } catch (Throwable $e) {
             // Surfaces a friendly message but still shows the static playbook so
             // the page is useful even when the API call cannot be made (e.g.
@@ -358,9 +376,61 @@ class GoogleAdsApiController extends Controller
 
         return Inertia::render('RecommendationsResult', [
             'customerId' => $customerId,
+            'industry' => $industry,
             'recommendations' => $recommendations,
+            'findings' => $findings,
+            'optimizationScore' => $optimizationScore,
+            'benchmark' => $benchmark,
+            'industries' => array_keys($this->benchmarkData()['industries'] ?? []),
             'error' => $error,
         ]);
+    }
+
+    /**
+     * Loads the industry benchmark dataset (resources/knowledge/benchmarks.json).
+     *
+     * @return array<string, mixed> the decoded benchmark dataset
+     */
+    private function benchmarkData(): array
+    {
+        $path = resource_path('knowledge/benchmarks.json');
+        $decoded = is_file($path) ? json_decode((string) file_get_contents($path), true) : null;
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    /**
+     * Builds a directional comparison of the account's aggregate metrics against
+     * the published benchmark for the chosen industry. Returns null when the
+     * industry is unknown or the account has no aggregate metrics.
+     *
+     * @param string|null $industry the selected industry
+     * @param array<string, mixed>|null $account the account aggregate metrics
+     * @return array<string, mixed>|null the comparison, or null
+     */
+    private function buildBenchmark(?string $industry, ?array $account): ?array
+    {
+        $data = $this->benchmarkData();
+        if (
+            $industry === null
+            || $account === null
+            || !isset($data['industries'][$industry])
+        ) {
+            return null;
+        }
+        $b = $data['industries'][$industry];
+
+        return [
+            'industry' => $industry,
+            'currency' => $data['currency'] ?? 'USD',
+            'source' => $data['source'] ?? null,
+            'reviewed' => $data['reviewed'] ?? null,
+            'metrics' => [
+                ['label' => 'CTR', 'account' => $account['ctr'] ?? null, 'benchmark' => $b['avgCtr'], 'format' => 'percent', 'betterWhenHigher' => true],
+                ['label' => 'Avg. CPC', 'account' => $account['cpc'] ?? null, 'benchmark' => $b['avgCpc'], 'format' => 'currency', 'betterWhenHigher' => false],
+                ['label' => 'Conversion rate', 'account' => $account['cvr'] ?? null, 'benchmark' => $b['avgCvr'], 'format' => 'percent', 'betterWhenHigher' => true],
+                ['label' => 'Cost / conversion', 'account' => $account['cpa'] ?? null, 'benchmark' => $b['avgCpa'], 'format' => 'currency', 'betterWhenHigher' => false],
+            ],
+        ];
     }
 
     /**

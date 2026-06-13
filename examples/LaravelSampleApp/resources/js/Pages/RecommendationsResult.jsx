@@ -4,67 +4,212 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import Tip from '@/components/Tip';
 import { playbook } from '@/data/playbook';
 
-export default function RecommendationsResult({ customerId, recommendations = [], error = null }) {
+const SEVERITY_BADGE = { critical: 'destructive', warning: 'warning', info: 'info' };
+
+function fmt(value, format) {
+    if (value === null || value === undefined) return '—';
+    if (format === 'percent') return `${(value * 100).toFixed(2)}%`;
+    if (format === 'currency') return `$${Number(value).toFixed(2)}`;
+    return String(value);
+}
+
+function OptimizationScore({ score }) {
+    if (score === null || score === undefined) return null;
+    const pct = Math.round(score * 100);
+    const variant = pct >= 85 ? 'success' : pct >= 70 ? 'warning' : 'destructive';
     return (
-        <AppLayout
-            title="Optimization suggestions"
-            subtitle={`For account ${customerId}`}
-        >
+        <Card className="mb-6">
+            <CardHeader>
+                <CardTitle>
+                    Optimization score
+                    <Badge variant={variant}>{pct}%</Badge>
+                </CardTitle>
+                <CardDescription>
+                    Google's own estimate of how well this account is set to perform.{' '}
+                    <a className="underline-offset-4 hover:underline" target="_blank" rel="noreferrer"
+                       href="https://support.google.com/google-ads/answer/9061546">Learn more</a>.
+                </CardDescription>
+            </CardHeader>
+        </Card>
+    );
+}
+
+function Benchmark({ benchmark }) {
+    if (!benchmark) return null;
+    return (
+        <Card className="mb-6">
+            <CardHeader>
+                <CardTitle>
+                    Industry benchmarks
+                    <Badge variant="secondary">{benchmark.industry}</Badge>
+                </CardTitle>
+                <CardDescription>
+                    Directional only — aggregated third-party averages, not a guarantee.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="rounded-lg border">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Metric</TableHead>
+                                <TableHead>Your account</TableHead>
+                                <TableHead>Industry avg.</TableHead>
+                                <TableHead>vs. benchmark</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {benchmark.metrics.map((m) => {
+                                const has = m.account !== null && m.account !== undefined;
+                                const better = has
+                                    ? m.betterWhenHigher
+                                        ? m.account >= m.benchmark
+                                        : m.account <= m.benchmark
+                                    : null;
+                                return (
+                                    <TableRow key={m.label}>
+                                        <TableCell className="font-medium">{m.label}</TableCell>
+                                        <TableCell>{fmt(m.account, m.format)}</TableCell>
+                                        <TableCell className="text-muted-foreground">{fmt(m.benchmark, m.format)}</TableCell>
+                                        <TableCell>
+                                            {has ? (
+                                                <Badge variant={better ? 'success' : 'warning'}>
+                                                    {better ? 'On par / better' : 'Below average'}
+                                                </Badge>
+                                            ) : '—'}
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })}
+                        </TableBody>
+                    </Table>
+                </div>
+                {benchmark.source && (
+                    <p className="mt-3 text-xs text-muted-foreground">
+                        Source:{' '}
+                        <a href={benchmark.source.url} target="_blank" rel="noreferrer" className="underline-offset-4 hover:underline">
+                            {benchmark.source.label}
+                        </a>
+                        {benchmark.reviewed && <span> · reviewed {benchmark.reviewed}</span>}
+                    </p>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+export default function RecommendationsResult({
+    customerId,
+    recommendations = [],
+    findings = [],
+    optimizationScore = null,
+    benchmark = null,
+    error = null,
+}) {
+    return (
+        <AppLayout title="Optimization suggestions" subtitle={`For account ${customerId}`}>
             <Head title="Optimization suggestions" />
 
             {error ? (
                 <Alert variant="destructive" className="mb-6">
                     <AlertDescription>
-                        <strong>Couldn't fetch live recommendations.</strong> This usually means the
-                        server isn't connected to Google Ads yet, or the Customer ID is invalid. You
-                        can still use the playbook below.
+                        <strong>Couldn't analyze the account.</strong> This usually means the server
+                        isn't connected to Google Ads yet, or the Customer ID is invalid. You can
+                        still use the playbook below.
                         <span className="mt-1 block text-xs text-muted-foreground">
                             Details: {String(error).slice(0, 240)}
                         </span>
                     </AlertDescription>
                 </Alert>
-            ) : recommendations.length === 0 ? (
-                <Alert variant="info" className="mb-6">
-                    <AlertDescription>
-                        No active recommendations right now — nice, the account is in good shape. Keep
-                        an eye on the playbook below.
-                    </AlertDescription>
-                </Alert>
             ) : (
-                <Card className="mb-6">
-                    <CardHeader>
-                        <CardTitle>
-                            Live recommendations
-                            <Badge variant="success">{recommendations.length} found</Badge>
-                        </CardTitle>
-                        <CardDescription>
-                            Straight from Google Ads for this account, with what each one means.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                        {recommendations.map((rec, i) => (
-                            <Tip
-                                key={i}
-                                title={rec.title}
-                                meta={rec.campaignId ? `· campaign ${rec.campaignId}` : null}
-                                badge={{ variant: rec.badge, label: rec.type.replace(/_/g, ' ') }}
-                                problem={rec.why}
-                                fix={rec.fix}
-                                fixLabel="How to fix"
-                            />
-                        ))}
-                    </CardContent>
-                </Card>
+                <>
+                    <OptimizationScore score={optimizationScore} />
+
+                    <Card className="mb-6">
+                        <CardHeader>
+                            <CardTitle>
+                                Account analysis
+                                <Badge variant="secondary">Rules-based · sourced</Badge>
+                                {findings.length > 0 && <Badge variant="warning">{findings.length} issue{findings.length === 1 ? '' : 's'}</Badge>}
+                            </CardTitle>
+                            <CardDescription>
+                                Deterministic checks against your real account data. Every finding cites
+                                an official Google source — no AI.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                            {findings.length === 0 ? (
+                                <Alert variant="info">
+                                    <AlertDescription>
+                                        No rule-based issues detected from the available data. Keep an eye
+                                        on the playbook below.
+                                    </AlertDescription>
+                                </Alert>
+                            ) : (
+                                findings.map((f, i) => (
+                                    <Tip
+                                        key={i}
+                                        title={f.title}
+                                        meta={f.campaign ? `· ${f.campaign}` : null}
+                                        badge={{ variant: SEVERITY_BADGE[f.severity] ?? 'info', label: f.severity }}
+                                        problem={f.why}
+                                        fix={f.fix}
+                                        fixLabel="How to fix"
+                                        source={f.source}
+                                        reviewed={f.reviewed}
+                                    />
+                                ))
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <Benchmark benchmark={benchmark} />
+
+                    {recommendations.length > 0 && (
+                        <Card className="mb-6">
+                            <CardHeader>
+                                <CardTitle>
+                                    Google recommendations
+                                    <Badge variant="success">{recommendations.length} from Google</Badge>
+                                </CardTitle>
+                                <CardDescription>
+                                    Generated by Google Ads' own engine for this account.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                                {recommendations.map((rec, i) => (
+                                    <Tip
+                                        key={i}
+                                        title={rec.title}
+                                        meta={rec.campaignId ? `· campaign ${rec.campaignId}` : null}
+                                        badge={{ variant: rec.badge, label: rec.type.replace(/_/g, ' ') }}
+                                        problem={rec.why}
+                                        fix={rec.fix}
+                                        fixLabel="How to fix"
+                                    />
+                                ))}
+                            </CardContent>
+                        </Card>
+                    )}
+                </>
             )}
 
             <Card>
                 <CardHeader>
                     <CardTitle>Optimization playbook</CardTitle>
                     <CardDescription>
-                        Common problems and how to fix them — useful for any account.
+                        Source-cited best practices — useful for any account.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">

@@ -30,6 +30,29 @@ components in `resources/js/components/ui`), compiled by Vite.
 
 ---
 
+## Where the optimization knowledge comes from (no AI)
+
+The optimization suggestions are **deterministic and source-cited** — there is no
+AI or randomness. Four knowledge sources feed the "Optimization suggestions" page:
+
+1. **Google's Optimization Score** — Google's own validated estimate of account
+   health, pulled live via the API.
+2. **A deterministic rule engine** — `app/Optimization/OptimizationAnalyzer.php`
+   evaluates a versioned ruleset (`resources/knowledge/rules.json`) against your
+   real account signals (conversion tracking, impression share, Ad Strength, CTR
+   vs. the account benchmark). Each rule cites an official Google source and a
+   last-reviewed date. It is covered by unit tests
+   (`tests/Unit/OptimizationAnalyzerTest.php`) so the same data always yields the
+   same findings — run `vendor/bin/phpunit --testsuite Unit`.
+3. **Google's own recommendations** — fetched live from the Google Ads
+   RecommendationService.
+4. **Industry benchmarks** — `resources/knowledge/benchmarks.json`, a
+   *directional* third-party dataset (clearly labeled, with a source and review
+   date). Refresh it periodically; it is not a guarantee.
+
+To tune the system, edit `resources/knowledge/rules.json` (thresholds, copy,
+sources) or `resources/knowledge/benchmarks.json` — no code changes required.
+
 ## Team login (shared password)
 
 The app is gated by a **single shared password** so you can safely host it as one
