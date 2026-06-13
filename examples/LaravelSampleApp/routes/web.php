@@ -16,6 +16,11 @@
  * limitations under the License.
  */
 
+// Liveness probe for load balancers / uptime monitoring (no auth).
+Route::get('health', function () {
+    return response()->json(['status' => 'ok', 'time' => now()->toIso8601String()]);
+})->name('health');
+
 // Shared-password login flow that gates the application for team use. These
 // routes are intentionally left outside the 'team.auth' middleware group.
 Route::get('login', 'TeamAccessController@showLogin')->name('login');

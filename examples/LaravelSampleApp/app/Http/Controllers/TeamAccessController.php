@@ -20,6 +20,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Inertia\Inertia;
 
 /**
@@ -28,6 +29,9 @@ use Inertia\Inertia;
  */
 class TeamAccessController extends Controller
 {
+    /** Maximum failed login attempts per IP per minute before lockout. */
+    private const MAX_LOGIN_ATTEMPTS = 5;
+
     /**
      * Shows the login form. If access control is not configured or the visitor
      * is already authenticated, sends them straight to the dashboard.
@@ -56,18 +60,30 @@ class TeamAccessController extends Controller
     {
         $request->validate(['password' => 'required|string']);
 
+        // Throttle login attempts per IP to resist brute force.
+        $key = 'login:' . $request->ip();
+        if (RateLimiter::tooManyAttempts($key, self::MAX_LOGIN_ATTEMPTS)) {
+            $seconds = RateLimiter::availableIn($key);
+            return redirect()->route('login')->withErrors(
+                ['password' => "Too many attempts. Try again in {$seconds} seconds."]
+            );
+        }
+
         $configuredPassword = config('app.team_access_password');
         // Constant-time comparison to avoid leaking the password via timing.
         if (
             !empty($configuredPassword)
             && hash_equals((string) $configuredPassword, (string) $request->input('password'))
         ) {
+            RateLimiter::clear($key);
             // Prevents session fixation by rotating the session ID on login.
             $request->session()->regenerate();
             $request->session()->put('team_authenticated', true);
             return redirect()->intended('/');
         }
 
+        // Count this failed attempt (decays after one minute).
+        RateLimiter::hit($key, 60);
         return redirect()->route('login')->withErrors(
             ['password' => 'Incorrect password. Please try again.']
         );

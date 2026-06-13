@@ -1,7 +1,9 @@
-import { Link, router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function AppLayout({ title, subtitle, authenticated = true, children }) {
+    const flash = usePage().props.flash ?? {};
     return (
         <div className="min-h-screen flex flex-col bg-background">
             <header className="sticky top-0 z-20 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -30,6 +32,16 @@ export default function AppLayout({ title, subtitle, authenticated = true, child
                             <p className="mt-1 text-muted-foreground">{subtitle}</p>
                         )}
                     </div>
+                )}
+                {flash.error && (
+                    <Alert variant="destructive" className="mb-5">
+                        <AlertDescription>{flash.error}</AlertDescription>
+                    </Alert>
+                )}
+                {flash.success && (
+                    <Alert variant="info" className="mb-5">
+                        <AlertDescription>{flash.success}</AlertDescription>
+                    </Alert>
                 )}
                 {children}
             </main>

@@ -208,6 +208,28 @@ the team, run this on a cloud VM and point a domain at it (ideally behind HTTPS)
 
 ---
 
+## Reliability & operations
+
+This app is built to production standards:
+
+- **Continuous integration** — `.github/workflows/dashboard-ci.yml` runs the PHP
+  test suite, the frontend component tests, and a production build on every push
+  and pull request that touches the app.
+- **Tests** — `vendor/bin/phpunit` (rule engine, contract tests, validation,
+  throttling, security headers, the benchmarks command) and `npm run test`
+  (Vitest component tests). A contract test keeps the ruleset and the data
+  fetcher from drifting apart.
+- **Input validation & graceful errors** — every action validates the Customer
+  ID (and Campaign ID) and shows friendly messages instead of raw 500s; Google
+  Ads API failures are caught and explained.
+- **Safety** — pausing a campaign requires an explicit confirmation, and every
+  pause is written to an append-only audit log (`storage/logs/audit.log`).
+- **Security** — login attempts are rate-limited per IP, and every response
+  carries hardening headers (CSP in production, `X-Frame-Options`, `nosniff`,
+  `Referrer-Policy`, and HSTS over HTTPS).
+- **Health check** — `GET /health` returns JSON for uptime monitors; the Docker
+  image has a matching `HEALTHCHECK`.
+
 ## Troubleshooting
 
 | Symptom | Fix |

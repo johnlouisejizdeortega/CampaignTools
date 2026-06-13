@@ -28,7 +28,7 @@ FROM php:8.3-apache
 # Google Ads library; zip speeds up Composer installs). gRPC is intentionally
 # omitted — the library falls back to the REST transport.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git unzip libzip-dev \
+    && apt-get install -y --no-install-recommends git unzip libzip-dev curl \
     && docker-php-ext-install bcmath zip \
     && a2enmod rewrite \
     && rm -rf /var/lib/apt/lists/*
@@ -57,5 +57,7 @@ COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 EXPOSE 80
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD curl -fsS http://localhost/health || exit 1
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["apache2-foreground"]

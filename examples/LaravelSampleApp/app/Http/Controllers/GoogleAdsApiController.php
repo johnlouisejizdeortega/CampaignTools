@@ -20,6 +20,7 @@ namespace App\Http\Controllers;
 
 use App\Optimization\AccountSignalsFetcher;
 use App\Optimization\OptimizationAnalyzer;
+use App\Support\AuditLogger;
 use Google\Ads\GoogleAds\Lib\V24\GoogleAdsClient;
 use Google\Ads\GoogleAds\Util\FieldMasks;
 use Google\Ads\GoogleAds\Util\V24\ResourceNames;
@@ -30,8 +31,10 @@ use Google\Ads\GoogleAds\V24\Services\CampaignOperation;
 use Google\Ads\GoogleAds\V24\Services\GoogleAdsRow;
 use Google\Ads\GoogleAds\V24\Services\MutateCampaignsRequest;
 use Google\Ads\GoogleAds\V24\Services\SearchGoogleAdsRequest;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 use Throwable;
@@ -157,8 +160,18 @@ class GoogleAdsApiController extends Controller
     public function showReportAction(
         Request $request,
         GoogleAdsClient $googleAdsClient
-    ): InertiaResponse {
+    ): InertiaResponse|RedirectResponse {
         if ($request->method() === 'POST') {
+            // Validates the form inputs before touching the API.
+            $request->validate([
+                'customerId' => ['required', 'regex:/^\d{10}$/'],
+                'reportType' => ['required', 'in:campaign,customer'],
+                'reportRange' => ['required', 'in:YESTERDAY,LAST_7_DAYS,LAST_WEEK_MON_SUN,LAST_MONTH'],
+                'entriesPerPage' => ['required', 'in:20,50,100'],
+            ], [
+                'customerId.regex' => 'Enter a 10-digit Customer ID without dashes.',
+            ]);
+
             // Retrieves the form inputs.
             $customerId = $request->input('customerId');
             $reportType = $request->input('reportType');
@@ -220,6 +233,7 @@ class GoogleAdsApiController extends Controller
             $pageTokens = $request->session()->get('pageTokens');
         }
 
+        try {
         // Determines the number of the page to load (the first one by default).
         $pageNo = $request->input('page') ?: 1;
 
@@ -303,6 +317,9 @@ class GoogleAdsApiController extends Controller
             'results' => $paginatedResults,
             'selectedFields' => $selectedFields,
         ]);
+        } catch (Throwable $e) {
+            return back()->with('error', $this->friendlyApiError($e));
+        }
     }
 
     /**
@@ -318,6 +335,13 @@ class GoogleAdsApiController extends Controller
         Request $request,
         GoogleAdsClient $googleAdsClient
     ): InertiaResponse {
+        $request->validate([
+            'customerId' => ['required', 'regex:/^\d{10}$/'],
+            'industry' => ['nullable', 'string', 'max:100'],
+        ], [
+            'customerId.regex' => 'Enter a 10-digit Customer ID without dashes.',
+        ]);
+
         $customerId = $request->input('customerId');
         $industry = $request->input('industry');
         $recommendations = [];
@@ -463,11 +487,20 @@ class GoogleAdsApiController extends Controller
     public function pauseCampaignAction(
         Request $request,
         GoogleAdsClient $googleAdsClient
-    ): InertiaResponse {
-        // Retrieves the form inputs.
+    ): InertiaResponse|RedirectResponse {
+        // Validates the form inputs before touching the API.
+        $request->validate([
+            'customerId' => ['required', 'regex:/^\d{10}$/'],
+            'campaignId' => ['required', 'regex:/^\d+$/'],
+        ], [
+            'customerId.regex' => 'Enter a 10-digit Customer ID without dashes.',
+            'campaignId.regex' => 'Enter a numeric Campaign ID.',
+        ]);
+
         $customerId = $request->input('customerId');
         $campaignId = $request->input('campaignId');
 
+        try {
         // Deducts the campaign resource name from the given IDs.
         $campaignResourceName = ResourceNames::forCampaign($customerId, $campaignId);
 
@@ -506,9 +539,44 @@ class GoogleAdsApiController extends Controller
             true
         );
 
+        // Records the destructive action in the audit log for accountability.
+        AuditLogger::record($request, 'campaign.pause', [
+            'customerId' => $customerId,
+            'campaignId' => $campaignId,
+        ]);
+
         return Inertia::render('PauseResult', [
             'customerId' => $customerId,
             'campaign' => $campaign,
         ]);
+        } catch (Throwable $e) {
+            return back()->with('error', $this->friendlyApiError($e));
+        }
+    }
+
+    /**
+     * Turns a raw exception from the Google Ads API into a short, user-friendly
+     * message (full details still go to the logs).
+     *
+     * @param Throwable $e the caught exception
+     * @return string the friendly message
+     */
+    private function friendlyApiError(Throwable $e): string
+    {
+        Log::warning('Google Ads API request failed', ['exception' => $e->getMessage()]);
+        $message = $e->getMessage();
+        if (stripos($message, 'invalid_client') !== false || stripos($message, 'oauth') !== false) {
+            return 'The server is not connected to Google Ads yet (check the credentials file).';
+        }
+        if (stripos($message, 'PERMISSION_DENIED') !== false || stripos($message, 'USER_PERMISSION_DENIED') !== false) {
+            return 'Access to this account was denied. Check the Customer ID and your account permissions.';
+        }
+        if (stripos($message, 'NOT_FOUND') !== false || stripos($message, 'invalid customer') !== false) {
+            return 'That Customer ID could not be found.';
+        }
+        if (stripos($message, 'RESOURCE_EXHAUSTED') !== false || stripos($message, 'quota') !== false) {
+            return 'Google Ads API quota was exceeded. Please try again shortly.';
+        }
+        return 'Could not complete the request against Google Ads. Please try again.';
     }
 }

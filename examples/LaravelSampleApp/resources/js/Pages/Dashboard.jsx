@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Head, useForm } from '@inertiajs/react';
 import { ShieldCheck } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
@@ -75,6 +76,7 @@ function ShowReportForm() {
                             onChange={(e) => form.setData('customerId', e.target.value)}
                             required
                         />
+                        {form.errors.customerId && <p className="text-xs text-destructive">{form.errors.customerId}</p>}
                     </div>
                     <div className="space-y-2">
                         <Label>Report type</Label>
@@ -128,10 +130,17 @@ function ShowReportForm() {
 
 function PauseCampaignForm() {
     const form = useForm({ customerId: '', campaignId: '' });
-    const submit = (e) => {
+    const [confirming, setConfirming] = useState(false);
+
+    const askConfirm = (e) => {
         e.preventDefault();
+        setConfirming(true);
+    };
+    const confirmPause = () => {
+        setConfirming(false);
         form.post('/pause-campaign');
     };
+
     return (
         <Card>
             <CardHeader>
@@ -139,7 +148,7 @@ function PauseCampaignForm() {
                 <CardDescription>Temporarily stop a live campaign from spending.</CardDescription>
             </CardHeader>
             <CardContent>
-                <form onSubmit={submit} className="space-y-4">
+                <form onSubmit={askConfirm} className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="pauseCustomerId">Customer ID</Label>
                         <Input
@@ -149,6 +158,7 @@ function PauseCampaignForm() {
                             onChange={(e) => form.setData('customerId', e.target.value)}
                             required
                         />
+                        {form.errors.customerId && <p className="text-xs text-destructive">{form.errors.customerId}</p>}
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="campaignId">Campaign ID</Label>
@@ -159,8 +169,29 @@ function PauseCampaignForm() {
                             onChange={(e) => form.setData('campaignId', e.target.value)}
                             required
                         />
+                        {form.errors.campaignId && <p className="text-xs text-destructive">{form.errors.campaignId}</p>}
                     </div>
-                    <Button type="submit" disabled={form.processing}>Pause campaign</Button>
+
+                    {confirming ? (
+                        <Alert variant="destructive">
+                            <AlertDescription>
+                                <p className="mb-3">
+                                    Pause campaign <strong>{form.data.campaignId}</strong> on account{' '}
+                                    <strong>{form.data.customerId}</strong>? It will stop spending immediately.
+                                </p>
+                                <div className="flex gap-2">
+                                    <Button type="button" variant="destructive" size="sm" onClick={confirmPause} disabled={form.processing}>
+                                        Yes, pause it
+                                    </Button>
+                                    <Button type="button" variant="outline" size="sm" onClick={() => setConfirming(false)}>
+                                        Cancel
+                                    </Button>
+                                </div>
+                            </AlertDescription>
+                        </Alert>
+                    ) : (
+                        <Button type="submit" disabled={form.processing}>Pause campaign</Button>
+                    )}
                 </form>
             </CardContent>
         </Card>
@@ -203,6 +234,7 @@ function OptimizationPanel() {
                             onChange={(e) => form.setData('customerId', e.target.value)}
                             required
                         />
+                        {form.errors.customerId && <p className="text-xs text-destructive">{form.errors.customerId}</p>}
                     </div>
                     <div className="w-full space-y-2 sm:max-w-xs">
                         <Label>Industry (optional, for benchmarks)</Label>
