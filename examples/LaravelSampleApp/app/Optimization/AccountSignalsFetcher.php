@@ -21,6 +21,7 @@ namespace App\Optimization;
 use Google\Ads\GoogleAds\Lib\V24\GoogleAdsClient;
 use Google\Ads\GoogleAds\V24\Enums\AdStrengthEnum\AdStrength;
 use Google\Ads\GoogleAds\V24\Enums\ConversionTrackingStatusEnum\ConversionTrackingStatus;
+use Google\Ads\GoogleAds\V24\Enums\PolicyApprovalStatusEnum\PolicyApprovalStatus;
 use Google\Ads\GoogleAds\V24\Services\SearchGoogleAdsRequest;
 
 /**
@@ -101,6 +102,8 @@ class AccountSignalsFetcher
             $response = $service->search(SearchGoogleAdsRequest::build(
                 $customerId,
                 'SELECT campaign.name, metrics.ctr, metrics.impressions, '
+                . 'metrics.cost_micros, metrics.conversions, '
+                . 'metrics.search_impression_share, '
                 . 'metrics.search_budget_lost_impression_share, '
                 . 'metrics.search_rank_lost_impression_share '
                 . 'FROM campaign WHERE segments.date DURING LAST_30_DAYS '
@@ -114,12 +117,17 @@ class AccountSignalsFetcher
                 $ctr = $metrics->getCtr();
                 $ctrSum += $ctr;
                 $ctrCount++;
+                $cost = $metrics->getCostMicros() / 1_000_000;
+                $conversions = $metrics->getConversions();
                 $campaigns[$name] = [
                     'name' => $name,
                     'ctr' => $ctr,
+                    'searchImpressionShare' => $metrics->getSearchImpressionShare(),
+                    'spendingWithoutConversions' => $cost > 0 && $conversions == 0,
                     'budgetLostImpressionShare' => $metrics->getSearchBudgetLostImpressionShare(),
                     'rankLostImpressionShare' => $metrics->getSearchRankLostImpressionShare(),
                     'poorAdStrengthCount' => 0,
+                    'disapprovedAdCount' => 0,
                     'hasAdGroupWithSingleAd' => false,
                 ];
             }
@@ -139,7 +147,8 @@ class AccountSignalsFetcher
             $adGroupAdCounts = [];
             $response = $service->search(SearchGoogleAdsRequest::build(
                 $customerId,
-                'SELECT campaign.name, ad_group.id, ad_group_ad.ad_strength '
+                'SELECT campaign.name, ad_group.id, ad_group_ad.ad_strength, '
+                . 'ad_group_ad.policy_summary.approval_status '
                 . "FROM ad_group_ad WHERE ad_group_ad.status != 'REMOVED'"
             ));
             foreach ($response->iterateAllElements() as $row) {
@@ -147,8 +156,15 @@ class AccountSignalsFetcher
                 if (!isset($campaigns[$name])) {
                     continue;
                 }
-                if ($row->getAdGroupAd()->getAdStrength() === AdStrength::POOR) {
+                $adGroupAd = $row->getAdGroupAd();
+                if ($adGroupAd->getAdStrength() === AdStrength::POOR) {
                     $campaigns[$name]['poorAdStrengthCount']++;
+                }
+                if (
+                    $adGroupAd->getPolicySummary()?->getApprovalStatus()
+                    === PolicyApprovalStatus::DISAPPROVED
+                ) {
+                    $campaigns[$name]['disapprovedAdCount']++;
                 }
                 $adGroupId = $row->getAdGroup()->getId();
                 $adGroupAdCounts[$name][$adGroupId] = ($adGroupAdCounts[$name][$adGroupId] ?? 0) + 1;

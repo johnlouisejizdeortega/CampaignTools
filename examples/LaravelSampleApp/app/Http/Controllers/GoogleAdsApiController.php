@@ -382,8 +382,28 @@ class GoogleAdsApiController extends Controller
             'optimizationScore' => $optimizationScore,
             'benchmark' => $benchmark,
             'industries' => array_keys($this->benchmarkData()['industries'] ?? []),
+            'meta' => $this->knowledgeMeta(),
             'error' => $error,
         ]);
+    }
+
+    /**
+     * Builds the "data freshness" metadata shown on the optimization page so
+     * users always know how current the analysis and datasets are.
+     *
+     * @return array<string, string|null> the freshness metadata
+     */
+    private function knowledgeMeta(): array
+    {
+        $rulesPath = resource_path('knowledge/rules.json');
+        $rules = is_file($rulesPath) ? json_decode((string) file_get_contents($rulesPath), true) : [];
+
+        return [
+            'analyzedAt' => now()->toDayDateTimeString(),
+            'dataWindow' => 'Last 30 days',
+            'rulesVersion' => $rules['version'] ?? null,
+            'benchmarksReviewed' => $this->benchmarkData()['reviewed'] ?? null,
+        ];
     }
 
     /**

@@ -115,6 +115,75 @@ class OptimizationAnalyzerTest extends TestCase
         $this->assertContains('poor-ad-strength', $ids);
     }
 
+    public function testFlagsNewlyAddedRules(): void
+    {
+        $findings = $this->analyzer()->analyze([
+            'conversionTrackingEnabled' => true,
+            'optimizationScore' => 1.0,
+            'campaigns' => [
+                [
+                    'name' => 'Search',
+                    'disapprovedAdCount' => 2,
+                    'spendingWithoutConversions' => true,
+                    'searchImpressionShare' => 0.31,
+                ],
+            ],
+        ]);
+        $ids = $this->ids($findings);
+        $this->assertContains('disapproved-ads', $ids);
+        $this->assertContains('spend-without-conversions', $ids);
+        $this->assertContains('low-search-impression-share', $ids);
+
+        // Severity of a disapproved-ads finding should be critical.
+        $disapproved = array_values(array_filter($findings, static fn ($f) => $f['id'] === 'disapproved-ads'));
+        $this->assertSame('critical', $disapproved[0]['severity']);
+    }
+
+    public function testHealthySearchImpressionShareDoesNotFlag(): void
+    {
+        $findings = $this->analyzer()->analyze([
+            'conversionTrackingEnabled' => true,
+            'optimizationScore' => 1.0,
+            'campaigns' => [
+                ['name' => 'Search', 'searchImpressionShare' => 0.82, 'spendingWithoutConversions' => false, 'disapprovedAdCount' => 0],
+            ],
+        ]);
+        $ids = $this->ids($findings);
+        $this->assertNotContains('low-search-impression-share', $ids);
+        $this->assertNotContains('spend-without-conversions', $ids);
+        $this->assertNotContains('disapproved-ads', $ids);
+    }
+
+    public function testEveryRuleHasACitationAndReviewDate(): void
+    {
+        // Fire every rule at once and assert each finding is properly sourced.
+        $findings = $this->analyzer()->analyze([
+            'conversionTrackingEnabled' => false,
+            'optimizationScore' => 0.4,
+            'campaigns' => [
+                [
+                    'name' => 'Everything',
+                    'budgetLostImpressionShare' => 0.9,
+                    'rankLostImpressionShare' => 0.9,
+                    'ctrBelowBenchmark' => true,
+                    'hasAdGroupWithSingleAd' => true,
+                    'poorAdStrengthCount' => 5,
+                    'disapprovedAdCount' => 1,
+                    'spendingWithoutConversions' => true,
+                    'searchImpressionShare' => 0.1,
+                ],
+            ],
+        ]);
+        $this->assertNotEmpty($findings);
+        foreach ($findings as $f) {
+            $this->assertArrayHasKey('source', $f);
+            $this->assertArrayHasKey('url', $f['source']);
+            $this->assertNotEmpty($f['source']['url']);
+            $this->assertNotEmpty($f['reviewed']);
+            $this->assertContains($f['severity'], ['critical', 'warning', 'info']);
+        }
+    }
+
     public function testHealthyAccountProducesNoFindings(): void
     {
         $findings = $this->analyzer()->analyze([

@@ -109,17 +109,31 @@ function Benchmark({ benchmark }) {
     );
 }
 
+function FreshnessBar({ meta }) {
+    if (!meta) return null;
+    const parts = [];
+    if (meta.dataWindow) parts.push(`${meta.dataWindow} of account data`);
+    if (meta.analyzedAt) parts.push(`analyzed ${meta.analyzedAt}`);
+    if (meta.rulesVersion) parts.push(`ruleset v${meta.rulesVersion}`);
+    if (meta.benchmarksReviewed) parts.push(`benchmarks reviewed ${meta.benchmarksReviewed}`);
+    return (
+        <p className="mb-6 text-xs text-muted-foreground">{parts.join(' · ')}</p>
+    );
+}
+
 export default function RecommendationsResult({
     customerId,
     recommendations = [],
     findings = [],
     optimizationScore = null,
     benchmark = null,
+    meta = null,
     error = null,
 }) {
     return (
         <AppLayout title="Optimization suggestions" subtitle={`For account ${customerId}`}>
             <Head title="Optimization suggestions" />
+            {!error && <FreshnessBar meta={meta} />}
 
             {error ? (
                 <Alert variant="destructive" className="mb-6">
