@@ -10,12 +10,28 @@ import {
     TableRow,
 } from '@/components/ui/table';
 
-function valueFor(row, field) {
+type ReportRow = Record<string, Record<string, string | number>>;
+
+interface Paginated {
+    data: ReportRow[];
+    from: number | null;
+    to: number | null;
+    total: number;
+    prev_page_url: string | null;
+    next_page_url: string | null;
+}
+
+interface ReportResultProps {
+    results: Paginated;
+    selectedFields?: string[];
+}
+
+function valueFor(row: ReportRow, field: string) {
     const [parent, child] = field.split('.');
     return row?.[parent]?.[child] ?? 'N/A';
 }
 
-export default function ReportResult({ results, selectedFields = [] }) {
+export default function ReportResult({ results, selectedFields = [] }: ReportResultProps) {
     const rows = results?.data ?? [];
 
     return (

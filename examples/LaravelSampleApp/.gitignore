@@ -14,3 +14,7 @@ npm-debug.log
 yarn-error.log
 google_ads_php.ini
 /database/*.sqlite
+/test-results
+/playwright-report
+/blob-report
+/playwright/.cache

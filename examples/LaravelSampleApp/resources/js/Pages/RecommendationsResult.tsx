@@ -14,20 +14,25 @@ import {
 } from '@/components/ui/table';
 import Tip from '@/components/Tip';
 import { playbook } from '@/data/playbook';
+import type { Benchmark as BenchmarkType, BadgeVariant, Finding, KnowledgeMeta, Recommendation } from '@/types';
 
-const SEVERITY_BADGE = { critical: 'destructive', warning: 'warning', info: 'info' };
+const SEVERITY_BADGE: Record<Finding['severity'], BadgeVariant> = {
+    critical: 'destructive',
+    warning: 'warning',
+    info: 'info',
+};
 
-function fmt(value, format) {
+function fmt(value: number | null | undefined, format: string) {
     if (value === null || value === undefined) return '—';
     if (format === 'percent') return `${(value * 100).toFixed(2)}%`;
     if (format === 'currency') return `$${Number(value).toFixed(2)}`;
     return String(value);
 }
 
-function OptimizationScore({ score }) {
+function OptimizationScore({ score }: { score: number | null }) {
     if (score === null || score === undefined) return null;
     const pct = Math.round(score * 100);
-    const variant = pct >= 85 ? 'success' : pct >= 70 ? 'warning' : 'destructive';
+    const variant: BadgeVariant = pct >= 85 ? 'success' : pct >= 70 ? 'warning' : 'destructive';
     return (
         <Card className="mb-6">
             <CardHeader>
@@ -45,7 +50,7 @@ function OptimizationScore({ score }) {
     );
 }
 
-function Benchmark({ benchmark }) {
+function Benchmark({ benchmark }: { benchmark: BenchmarkType | null }) {
     if (!benchmark) return null;
     return (
         <Card className="mb-6">
@@ -72,11 +77,11 @@ function Benchmark({ benchmark }) {
                         <TableBody>
                             {benchmark.metrics.map((m) => {
                                 const has = m.account !== null && m.account !== undefined;
-                                const better = has
-                                    ? m.betterWhenHigher
+                                const better = m.account == null
+                                    ? null
+                                    : m.betterWhenHigher
                                         ? m.account >= m.benchmark
-                                        : m.account <= m.benchmark
-                                    : null;
+                                        : m.account <= m.benchmark;
                                 return (
                                     <TableRow key={m.label}>
                                         <TableCell className="font-medium">{m.label}</TableCell>
@@ -109,9 +114,9 @@ function Benchmark({ benchmark }) {
     );
 }
 
-function FreshnessBar({ meta }) {
+function FreshnessBar({ meta }: { meta: KnowledgeMeta | null }) {
     if (!meta) return null;
-    const parts = [];
+    const parts: string[] = [];
     if (meta.dataWindow) parts.push(`${meta.dataWindow} of account data`);
     if (meta.analyzedAt) parts.push(`analyzed ${meta.analyzedAt}`);
     if (meta.rulesVersion) parts.push(`ruleset v${meta.rulesVersion}`);
@@ -119,6 +124,16 @@ function FreshnessBar({ meta }) {
     return (
         <p className="mb-6 text-xs text-muted-foreground">{parts.join(' · ')}</p>
     );
+}
+
+interface RecommendationsResultProps {
+    customerId: string;
+    recommendations?: Recommendation[];
+    findings?: Finding[];
+    optimizationScore?: number | null;
+    benchmark?: BenchmarkType | null;
+    meta?: KnowledgeMeta | null;
+    error?: string | null;
 }
 
 export default function RecommendationsResult({
@@ -129,7 +144,7 @@ export default function RecommendationsResult({
     benchmark = null,
     meta = null,
     error = null,
-}) {
+}: RecommendationsResultProps) {
     return (
         <AppLayout title="Optimization suggestions" subtitle={`For account ${customerId}`}>
             <Head title="Optimization suggestions" />

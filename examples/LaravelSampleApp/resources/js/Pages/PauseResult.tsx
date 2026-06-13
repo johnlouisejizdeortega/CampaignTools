@@ -5,7 +5,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 
-export default function PauseResult({ campaign }) {
+interface PauseResultProps {
+    campaign: { id: string; name: string; status: string };
+}
+
+export default function PauseResult({ campaign }: PauseResultProps) {
     return (
         <AppLayout
             title="Campaign paused"

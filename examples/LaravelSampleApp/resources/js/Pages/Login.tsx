@@ -1,4 +1,5 @@
 import { Head, useForm } from '@inertiajs/react';
+import type { FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,7 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 export default function Login() {
     const { data, setData, post, processing, errors } = useForm({ password: '' });
 
-    const submit = (e) => {
+    const submit = (e: FormEvent) => {
         e.preventDefault();
         post('/login');
     };

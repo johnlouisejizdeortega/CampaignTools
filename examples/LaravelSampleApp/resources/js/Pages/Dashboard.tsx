@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { Head, useForm } from '@inertiajs/react';
 import { ShieldCheck } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
@@ -31,25 +31,24 @@ function ShowReportForm() {
         ctr: true,
     });
 
-    const submit = (e) => {
+    const submit = (e: FormEvent) => {
         e.preventDefault();
-        form
-            .transform((data) => {
-                const out = {
-                    customerId: data.customerId,
-                    reportType: data.reportType,
-                    reportRange: data.reportRange,
-                    entriesPerPage: data.entriesPerPage,
-                };
-                if (data.impressions) out.impressions = 'metrics.impressions';
-                if (data.clicks) out.clicks = 'metrics.clicks';
-                if (data.ctr) out.ctr = 'metrics.ctr';
-                return out;
-            })
-            .post('/show-report');
+        form.transform((data) => {
+            const out: Record<string, string> = {
+                customerId: data.customerId,
+                reportType: data.reportType,
+                reportRange: data.reportRange,
+                entriesPerPage: data.entriesPerPage,
+            };
+            if (data.impressions) out.impressions = 'metrics.impressions';
+            if (data.clicks) out.clicks = 'metrics.clicks';
+            if (data.ctr) out.ctr = 'metrics.ctr';
+            return out;
+        });
+        form.post('/show-report');
     };
 
-    const metric = (key, label) => (
+    const metric = (key: 'impressions' | 'clicks' | 'ctr', label: string) => (
         <label className="flex items-center gap-2 text-sm">
             <Checkbox
                 checked={form.data[key]}
@@ -132,7 +131,7 @@ function PauseCampaignForm() {
     const form = useForm({ customerId: '', campaignId: '' });
     const [confirming, setConfirming] = useState(false);
 
-    const askConfirm = (e) => {
+    const askConfirm = (e: FormEvent) => {
         e.preventDefault();
         setConfirming(true);
     };
@@ -200,14 +199,13 @@ function PauseCampaignForm() {
 
 function OptimizationPanel() {
     const form = useForm({ customerId: '', industry: 'none' });
-    const submit = (e) => {
+    const submit = (e: FormEvent) => {
         e.preventDefault();
-        form
-            .transform((data) => ({
-                customerId: data.customerId,
-                industry: data.industry === 'none' ? '' : data.industry,
-            }))
-            .post('/recommendations');
+        form.transform((data) => ({
+            customerId: data.customerId,
+            industry: data.industry === 'none' ? '' : data.industry,
+        }));
+        form.post('/recommendations');
     };
     return (
         <Card>

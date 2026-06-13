@@ -215,9 +215,13 @@ This app is built to production standards:
 - **Continuous integration** — `.github/workflows/dashboard-ci.yml` runs the PHP
   test suite, the frontend component tests, and a production build on every push
   and pull request that touches the app.
+- **Type safety** — the frontend is **TypeScript** (React + Inertia); CI runs
+  `npm run typecheck` (`tsc --noEmit`) to catch prop-shape and other type bugs
+  before they ship.
 - **Tests** — `vendor/bin/phpunit` (rule engine, contract tests, validation,
-  throttling, security headers, the benchmarks command) and `npm run test`
-  (Vitest component tests). A contract test keeps the ruleset and the data
+  throttling, security headers, the benchmarks command), `npm run test` (Vitest
+  component tests), and `npm run test:e2e` (Playwright end-to-end of the real
+  login/dashboard/confirm flows). A contract test keeps the ruleset and the data
   fetcher from drifting apart.
 - **Input validation & graceful errors** — every action validates the Customer
   ID (and Campaign ID) and shows friendly messages instead of raw 500s; Google

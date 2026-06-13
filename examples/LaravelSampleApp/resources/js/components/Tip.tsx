@@ -1,6 +1,18 @@
 import { Badge } from '@/components/ui/badge';
+import type { BadgeVariant, Source } from '@/types';
 
-export default function Tip({ title, meta, badge, problem, fix, fixLabel = 'Fix', source, reviewed }) {
+interface TipProps {
+    title: string;
+    meta?: string | null;
+    badge?: { variant: BadgeVariant; label: string };
+    problem: string;
+    fix: string;
+    fixLabel?: string;
+    source?: Source;
+    reviewed?: string | null;
+}
+
+export default function Tip({ title, meta, badge, problem, fix, fixLabel = 'Fix', source, reviewed }: TipProps) {
     return (
         <div className="rounded-md border bg-card p-4">
             <div className="mb-2 flex items-start justify-between gap-3">

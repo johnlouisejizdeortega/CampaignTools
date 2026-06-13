@@ -1,9 +1,18 @@
 import { Link, router, usePage } from '@inertiajs/react';
+import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import type { SharedProps } from '@/types';
 
-export default function AppLayout({ title, subtitle, authenticated = true, children }) {
-    const flash = usePage().props.flash ?? {};
+interface AppLayoutProps {
+    title?: string;
+    subtitle?: string;
+    authenticated?: boolean;
+    children: ReactNode;
+}
+
+export default function AppLayout({ title, subtitle, authenticated = true, children }: AppLayoutProps) {
+    const flash = usePage<SharedProps>().props.flash ?? {};
     return (
         <div className="min-h-screen flex flex-col bg-background">
             <header className="sticky top-0 z-20 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">

@@ -1,9 +1,11 @@
 // Curated Google Ads optimization tips shown on the dashboard and the
 // recommendations result page. Each entry is sourced to an official Google
 // document and carries a last-reviewed date — no AI-generated content.
+import type { PlaybookTip } from '@/types';
+
 export const playbookReviewed = '2026-06-13';
 
-export const playbook = [
+export const playbook: PlaybookTip[] = [
     {
         badge: { variant: 'warning', label: 'High impact' },
         title: 'Conversion tracking is missing or broken',
