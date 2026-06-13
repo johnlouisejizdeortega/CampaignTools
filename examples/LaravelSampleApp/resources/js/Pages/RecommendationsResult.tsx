@@ -12,7 +12,9 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { BookOpen, Gauge, LineChart, ListChecks, Sparkles } from 'lucide-react';
 import Tip from '@/components/Tip';
+import ScoreGauge from '@/components/ScoreGauge';
 import { playbook } from '@/data/playbook';
 import type { Benchmark as BenchmarkType, BadgeVariant, Finding, KnowledgeMeta, Recommendation } from '@/types';
 
@@ -31,21 +33,21 @@ function fmt(value: number | null | undefined, format: string) {
 
 function OptimizationScore({ score }: { score: number | null }) {
     if (score === null || score === undefined) return null;
-    const pct = Math.round(score * 100);
-    const variant: BadgeVariant = pct >= 85 ? 'success' : pct >= 70 ? 'warning' : 'destructive';
     return (
         <Card className="mb-6">
-            <CardHeader>
-                <CardTitle>
-                    Optimization score
-                    <Badge variant={variant}>{pct}%</Badge>
-                </CardTitle>
-                <CardDescription>
-                    Google's own estimate of how well this account is set to perform.{' '}
-                    <a className="underline-offset-4 hover:underline" target="_blank" rel="noreferrer"
-                       href="https://support.google.com/google-ads/answer/9061546">Learn more</a>.
-                </CardDescription>
-            </CardHeader>
+            <CardContent className="flex items-center gap-6 pt-6">
+                <ScoreGauge value={score} />
+                <div>
+                    <h3 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+                        <Gauge className="h-5 w-5 text-muted-foreground" /> Optimization score
+                    </h3>
+                    <p className="mt-1 max-w-prose text-sm text-muted-foreground">
+                        Google's own estimate of how well this account is set to perform.{' '}
+                        <a className="underline-offset-4 hover:underline" target="_blank" rel="noreferrer"
+                           href="https://support.google.com/google-ads/answer/9061546">Learn more</a>.
+                    </p>
+                </div>
+            </CardContent>
         </Card>
     );
 }
@@ -56,7 +58,7 @@ function Benchmark({ benchmark }: { benchmark: BenchmarkType | null }) {
         <Card className="mb-6">
             <CardHeader>
                 <CardTitle>
-                    Industry benchmarks
+                    <LineChart className="h-5 w-5 text-muted-foreground" /> Industry benchmarks
                     <Badge variant="secondary">{benchmark.industry}</Badge>
                 </CardTitle>
                 <CardDescription>
@@ -168,7 +170,7 @@ export default function RecommendationsResult({
                     <Card className="mb-6">
                         <CardHeader>
                             <CardTitle>
-                                Account analysis
+                                <ListChecks className="h-5 w-5 text-muted-foreground" /> Account analysis
                                 <Badge variant="secondary">Rules-based · sourced</Badge>
                                 {findings.length > 0 && <Badge variant="warning">{findings.length} issue{findings.length === 1 ? '' : 's'}</Badge>}
                             </CardTitle>
@@ -209,7 +211,7 @@ export default function RecommendationsResult({
                         <Card className="mb-6">
                             <CardHeader>
                                 <CardTitle>
-                                    Google recommendations
+                                    <Sparkles className="h-5 w-5 text-muted-foreground" /> Google recommendations
                                     <Badge variant="success">{recommendations.length} from Google</Badge>
                                 </CardTitle>
                                 <CardDescription>
@@ -236,7 +238,7 @@ export default function RecommendationsResult({
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Optimization playbook</CardTitle>
+                    <CardTitle><BookOpen className="h-5 w-5 text-muted-foreground" /> Optimization playbook</CardTitle>
                     <CardDescription>
                         Source-cited best practices — useful for any account.
                     </CardDescription>

@@ -1,5 +1,6 @@
 import { Head, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
+import { Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,18 +16,23 @@ export default function Login() {
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-background p-6">
+        <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background p-6">
             <Head title="Sign in" />
-            <div className="w-full max-w-sm">
-                <div className="mb-6 flex items-center justify-center gap-2 font-semibold">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-xs font-bold text-primary-foreground">
+            {/* Subtle ambient gradient for depth without clutter. */}
+            <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 bg-[radial-gradient(60rem_60rem_at_110%_-10%,hsl(var(--muted))_0,transparent_55%),radial-gradient(50rem_50rem_at_-10%_110%,hsl(var(--muted))_0,transparent_55%)]"
+            />
+            <div className="relative w-full max-w-sm">
+                <div className="mb-6 flex items-center justify-center gap-2.5 font-semibold tracking-tight">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-[0.7rem] font-bold text-primary-foreground">
                         Ads
                     </span>
                     <span>Google Ads Dashboard</span>
                 </div>
-                <Card>
+                <Card className="shadow-lg">
                     <CardHeader>
-                        <CardTitle>Sign in</CardTitle>
+                        <CardTitle><Lock className="h-5 w-5 text-muted-foreground" /> Sign in</CardTitle>
                         <CardDescription>Enter the team password to continue.</CardDescription>
                     </CardHeader>
                     <CardContent>

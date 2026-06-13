@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Head, useForm } from '@inertiajs/react';
-import { ShieldCheck } from 'lucide-react';
+import { BarChart3, CirclePause, Search, ShieldCheck } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -61,7 +61,7 @@ function ShowReportForm() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Show a report</CardTitle>
+                <CardTitle><BarChart3 className="h-5 w-5 text-muted-foreground" /> Show a report</CardTitle>
                 <CardDescription>Pull live performance data for an account.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -120,7 +120,9 @@ function ShowReportForm() {
                             </Select>
                         </div>
                     </div>
-                    <Button type="submit" disabled={form.processing}>Show report</Button>
+                    <Button type="submit" disabled={form.processing}>
+                        <Search className="h-4 w-4" /> Show report
+                    </Button>
                 </form>
             </CardContent>
         </Card>
@@ -143,7 +145,7 @@ function PauseCampaignForm() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Pause a campaign</CardTitle>
+                <CardTitle><CirclePause className="h-5 w-5 text-muted-foreground" /> Pause a campaign</CardTitle>
                 <CardDescription>Temporarily stop a live campaign from spending.</CardDescription>
             </CardHeader>
             <CardContent>

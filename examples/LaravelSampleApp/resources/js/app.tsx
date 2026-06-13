@@ -4,6 +4,10 @@ import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import type { ReactNode } from 'react';
+import { applyStoredTheme } from '@/lib/theme';
+
+// Apply the saved colour theme as early as possible to avoid a flash.
+applyStoredTheme();
 
 const appName = 'Google Ads Dashboard';
 

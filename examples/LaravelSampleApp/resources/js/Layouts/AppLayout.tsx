@@ -1,7 +1,9 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import type { ReactNode } from 'react';
+import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import ThemeToggle from '@/components/ThemeToggle';
 import type { SharedProps } from '@/types';
 
 interface AppLayoutProps {
@@ -17,17 +19,21 @@ export default function AppLayout({ title, subtitle, authenticated = true, child
         <div className="min-h-screen flex flex-col bg-background">
             <header className="sticky top-0 z-20 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                 <div className="container flex h-16 items-center justify-between">
-                    <Link href="/" className="flex items-center gap-2 font-semibold">
-                        <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-xs font-bold text-primary-foreground">
+                    <Link href="/" className="flex items-center gap-2.5 font-semibold tracking-tight">
+                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-[0.65rem] font-bold text-primary-foreground">
                             Ads
                         </span>
                         <span>Google Ads Dashboard</span>
                     </Link>
-                    {authenticated && (
-                        <Button variant="outline" size="sm" onClick={() => router.post('/logout')}>
-                            Sign out
-                        </Button>
-                    )}
+                    <div className="flex items-center gap-1">
+                        <ThemeToggle />
+                        {authenticated && (
+                            <Button variant="ghost" size="sm" onClick={() => router.post('/logout')}>
+                                <LogOut className="mr-1.5 h-4 w-4" />
+                                Sign out
+                            </Button>
+                        )}
+                    </div>
                 </div>
             </header>
 
