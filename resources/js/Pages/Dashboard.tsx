@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Head, router, useForm } from '@inertiajs/react';
-import { BarChart3, ChevronDown, ChevronLeft, ChevronRight, CirclePause, Gauge, Plus, Search, ShieldCheck } from 'lucide-react';
+import { BarChart3, CirclePause, Gauge, Plus, Search, ShieldCheck } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,38 +25,17 @@ const sym = (c: string) => CURRENCY_SYMBOL[c] ?? `${c} `;
 
 /* ----------------------------- Overview header ---------------------------- */
 
-function FilterBar() {
-    const chip = 'flex items-center gap-1.5 rounded border bg-card px-3 py-1.5 text-sm text-foreground';
-    return (
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-            <span className={chip}>All campaigns <ChevronDown className="h-4 w-4 text-muted-foreground" /></span>
-            <span className={chip}>Select a campaign <ChevronDown className="h-4 w-4 text-muted-foreground" /></span>
-            <span className="ml-1 text-sm text-muted-foreground">Filters</span>
-            <span className="rounded-full bg-muted px-3 py-1 text-xs text-foreground">Campaign status: Enabled, Paused</span>
-            <span className="rounded-full bg-muted px-3 py-1 text-xs text-foreground">Ad group status: Enabled, Paused</span>
-            <button className="text-sm font-medium text-primary">Add filter</button>
-        </div>
-    );
-}
-
 function OverviewHeader() {
     return (
         <>
             <div className="mb-4 flex items-center justify-between">
                 <h1 className="text-[1.75rem] font-normal tracking-tight text-foreground">Overview</h1>
-                <div className="flex items-center gap-2 text-sm">
-                    <span className="text-muted-foreground">Custom</span>
-                    <div className="flex items-center gap-2 rounded-full border bg-card px-3 py-1.5">
-                        Last 30 days
-                        <span className="flex items-center gap-1 text-muted-foreground">
-                            <ChevronLeft className="h-4 w-4" /><ChevronRight className="h-4 w-4" />
-                        </span>
-                    </div>
+                <div className="rounded-full border bg-card px-3 py-1.5 text-sm text-muted-foreground">
+                    Last 30 days
                 </div>
             </div>
             <div className="mb-5 flex items-center gap-6 border-b">
                 <span className="-mb-px border-b-[3px] border-primary pb-2 text-sm font-medium text-foreground">Home</span>
-                <span className="pb-2 text-sm text-primary">+ Add custom view</span>
             </div>
         </>
     );
@@ -97,10 +76,10 @@ function OverviewMetrics({ overview }: { overview: OverviewData }) {
         <>
             <Card className="mb-5 overflow-hidden p-0">
                 <div className="grid grid-cols-2 border-t md:grid-cols-4">
-                    <Scorecard label="Clicks" value={compact.format(t.clicks)} highlight="blue" />
-                    <Scorecard label="Impressions" value={compact.format(t.impressions)} highlight="red" />
-                    <Scorecard label="Avg. CPC" value={`${c}${t.avgCpc.toFixed(2)}`} />
-                    <Scorecard label="Cost" value={`${c}${compact.format(t.cost)}`} />
+                    <Scorecard label="Clicks" value={compact.format(t.clicks)} highlight="blue" selectable={false} />
+                    <Scorecard label="Impressions" value={compact.format(t.impressions)} highlight="red" selectable={false} />
+                    <Scorecard label="Avg. CPC" value={`${c}${t.avgCpc.toFixed(2)}`} selectable={false} />
+                    <Scorecard label="Cost" value={`${c}${compact.format(t.cost)}`} selectable={false} />
                 </div>
                 <div className="p-5">
                     {overview.series.length >= 2 ? (
@@ -352,7 +331,6 @@ export default function Dashboard({ overview = null }: { overview?: OverviewData
     return (
         <AppLayout>
             <Head title="Overview" />
-            <FilterBar />
             <OverviewHeader />
 
             {connected
