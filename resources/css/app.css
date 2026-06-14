@@ -1,57 +1,67 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Theme tuned to the Google Ads product console (Material Design):
+ * Roboto type, Google Blue (#1a73e8), an #f8f9fa canvas with white cards,
+ * #dadce0 hairline borders and #202124 / #5f6368 text. Dark mode uses Google's
+ * dark surfaces (#202124 / #292a2d) and the lighter #8ab4f8 blue.
+ */
 @layer base {
     :root {
-        --background: 0 0% 100%;
-        --foreground: 240 10% 3.9%;
+        --background: 210 17% 98%;        /* #f8f9fa canvas */
+        --foreground: 225 6% 13%;         /* #202124 */
         --card: 0 0% 100%;
-        --card-foreground: 240 10% 3.9%;
+        --card-foreground: 225 6% 13%;
         --popover: 0 0% 100%;
-        --popover-foreground: 240 10% 3.9%;
-        --primary: 240 5.9% 10%;
-        --primary-foreground: 0 0% 98%;
-        --secondary: 240 4.8% 95.9%;
-        --secondary-foreground: 240 5.9% 10%;
-        --muted: 240 4.8% 95.9%;
-        --muted-foreground: 240 3.8% 46.1%;
-        --accent: 240 4.8% 95.9%;
-        --accent-foreground: 240 5.9% 10%;
-        --destructive: 0 84.2% 60.2%;
-        --destructive-foreground: 0 0% 98%;
-        --success: 142 71% 45%;
-        --success-foreground: 0 0% 98%;
-        --warning: 38 92% 50%;
-        --warning-foreground: 0 0% 98%;
-        --border: 240 5.9% 90%;
-        --input: 240 5.9% 90%;
-        --ring: 240 5.9% 10%;
-        --radius: 0.6rem;
+        --popover-foreground: 225 6% 13%;
+        --primary: 214 82% 51%;           /* Google Blue #1a73e8 */
+        --primary-foreground: 0 0% 100%;
+        --secondary: 210 14% 95%;         /* #f1f3f4 */
+        --secondary-foreground: 225 6% 13%;
+        --muted: 210 14% 95%;             /* #f1f3f4 */
+        --muted-foreground: 213 5% 39%;   /* #5f6368 */
+        --accent: 218 92% 95%;            /* light blue #e8f0fe */
+        --accent-foreground: 214 82% 51%; /* blue text on the light-blue accent */
+        --destructive: 4 70% 50%;         /* Google Red #d93025 */
+        --destructive-foreground: 0 0% 100%;
+        --success: 137 65% 34%;           /* Google Green #1e8e3e */
+        --success-foreground: 0 0% 100%;
+        --warning: 41 100% 49%;           /* Google Amber #f9ab00 */
+        --warning-foreground: 225 6% 13%; /* dark text reads on amber */
+        --border: 220 9% 87%;             /* #dadce0 */
+        --input: 220 9% 87%;
+        --ring: 214 82% 51%;              /* blue focus ring */
+        --radius: 0.5rem;                 /* 8px, Material card radius */
     }
 
     .dark {
-        --background: 240 10% 3.9%;
-        --foreground: 0 0% 98%;
-        --card: 240 10% 3.9%;
-        --card-foreground: 0 0% 98%;
-        --popover: 240 10% 3.9%;
-        --popover-foreground: 0 0% 98%;
-        --primary: 0 0% 98%;
-        --primary-foreground: 240 5.9% 10%;
-        --secondary: 240 3.7% 15.9%;
-        --secondary-foreground: 0 0% 98%;
-        --muted: 240 3.7% 15.9%;
-        --muted-foreground: 240 5% 64.9%;
-        --accent: 240 3.7% 15.9%;
-        --accent-foreground: 0 0% 98%;
-        --destructive: 0 62.8% 30.6%;
-        --destructive-foreground: 0 0% 98%;
-        --border: 240 3.7% 15.9%;
-        --input: 240 3.7% 15.9%;
-        --ring: 240 4.9% 83.9%;
+        --background: 225 6% 13%;         /* #202124 */
+        --foreground: 216 12% 92%;        /* #e8eaed */
+        --card: 225 5% 17%;               /* #292a2d */
+        --card-foreground: 216 12% 92%;
+        --popover: 225 5% 17%;
+        --popover-foreground: 216 12% 92%;
+        --primary: 217 89% 76%;           /* dark-mode Google Blue #8ab4f8 */
+        --primary-foreground: 225 6% 13%;
+        --secondary: 225 4% 20%;          /* #303134 */
+        --secondary-foreground: 216 12% 92%;
+        --muted: 225 4% 20%;
+        --muted-foreground: 210 6% 63%;   /* #9aa0a6 */
+        --accent: 217 30% 25%;            /* muted dark blue */
+        --accent-foreground: 217 89% 76%;
+        --destructive: 4 65% 48%;
+        --destructive-foreground: 0 0% 100%;
+        --success: 137 45% 48%;
+        --success-foreground: 225 6% 13%;
+        --warning: 41 90% 60%;            /* #fdd663 */
+        --warning-foreground: 225 6% 13%;
+        --border: 206 6% 25%;             /* #3c4043 */
+        --input: 206 6% 25%;
+        --ring: 217 89% 76%;
     }
 
     * {
