@@ -495,7 +495,7 @@ class GoogleAdsApiController extends Controller
 
         return [
             'industry' => $industry,
-            'currency' => $data['currency'] ?? 'USD',
+            'currency' => $b['currency'] ?? $data['currency'] ?? 'USD',
             'source' => $data['source'] ?? null,
             'reviewed' => $data['reviewed'] ?? null,
             'metrics' => [

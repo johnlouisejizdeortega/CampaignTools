@@ -1,5 +1,5 @@
 {
-    "_comment": "Directional Google Ads Search benchmarks by industry. These are aggregated third-party averages, NOT guarantees, and should be refreshed periodically. avgCtr and avgCvr are fractions (0.061 = 6.1%); avgCpc and avgCpa are in USD.",
+    "_comment": "Directional Google Ads Search benchmarks by industry. These are aggregated third-party averages, NOT guarantees, and should be refreshed periodically. avgCtr and avgCvr are fractions (0.061 = 6.1%); avgCpc and avgCpa are in the dataset currency (USD) unless a row sets its own 'currency' (e.g. the UK row uses GBP). The 'Heating & Boilers (UK)' row is directional UK home/trade-services data (boilers fall under home services).",
     "source": {
         "label": "LocaliQ / WordStream — Google Ads industry benchmarks (Search)",
         "url": "https://localiq.com/blog/search-advertising-benchmarks/"
@@ -13,6 +13,7 @@
         "Education & Instruction": { "avgCtr": 0.0641, "avgCpc": 2.34, "avgCvr": 0.078, "avgCpa": 49.06 },
         "Finance & Insurance": { "avgCtr": 0.0612, "avgCpc": 3.85, "avgCvr": 0.058, "avgCpa": 66.34 },
         "Health & Fitness": { "avgCtr": 0.0658, "avgCpc": 2.62, "avgCvr": 0.078, "avgCpa": 40.74 },
+        "Heating & Boilers (UK)": { "avgCtr": 0.058, "avgCpc": 3.5, "avgCvr": 0.08, "avgCpa": 45.0, "currency": "GBP" },
         "Home & Home Improvement": { "avgCtr": 0.0489, "avgCpc": 4.18, "avgCvr": 0.053, "avgCpa": 75.20 },
         "Industrial & Commercial": { "avgCtr": 0.0623, "avgCpc": 2.93, "avgCvr": 0.054, "avgCpa": 54.32 },
         "Legal": { "avgCtr": 0.0492, "avgCpc": 6.75, "avgCvr": 0.057, "avgCpa": 101.40 },
