@@ -7,6 +7,7 @@ export const industries = [
     'Education & Instruction',
     'Finance & Insurance',
     'Health & Fitness',
+    'Heating & Boilers (UK)',
     'Home & Home Improvement',
     'Industrial & Commercial',
     'Legal',

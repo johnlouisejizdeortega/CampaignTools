@@ -12,10 +12,11 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { BookOpen, Gauge, LineChart, ListChecks, Sparkles } from 'lucide-react';
+import { BookOpen, Flame, Gauge, LineChart, ListChecks, Sparkles } from 'lucide-react';
 import Tip from '@/components/Tip';
 import ScoreGauge from '@/components/ScoreGauge';
 import { playbook } from '@/data/playbook';
+import { verticalTips } from '@/data/verticalTips';
 import type { Benchmark as BenchmarkType, BadgeVariant, Finding, KnowledgeMeta, Recommendation } from '@/types';
 
 const SEVERITY_BADGE: Record<Finding['severity'], BadgeVariant> = {
@@ -24,10 +25,15 @@ const SEVERITY_BADGE: Record<Finding['severity'], BadgeVariant> = {
     info: 'info',
 };
 
-function fmt(value: number | null | undefined, format: string) {
+const CURRENCY_SYMBOL: Record<string, string> = { USD: '$', GBP: '£', EUR: '€' };
+
+function fmt(value: number | null | undefined, format: string, currency = 'USD') {
     if (value === null || value === undefined) return '—';
     if (format === 'percent') return `${(value * 100).toFixed(2)}%`;
-    if (format === 'currency') return `$${Number(value).toFixed(2)}`;
+    if (format === 'currency') {
+        const symbol = CURRENCY_SYMBOL[currency] ?? `${currency} `;
+        return `${symbol}${Number(value).toFixed(2)}`;
+    }
     return String(value);
 }
 
@@ -87,8 +93,8 @@ function Benchmark({ benchmark }: { benchmark: BenchmarkType | null }) {
                                 return (
                                     <TableRow key={m.label}>
                                         <TableCell className="font-medium">{m.label}</TableCell>
-                                        <TableCell>{fmt(m.account, m.format)}</TableCell>
-                                        <TableCell className="text-muted-foreground">{fmt(m.benchmark, m.format)}</TableCell>
+                                        <TableCell>{fmt(m.account, m.format, benchmark.currency)}</TableCell>
+                                        <TableCell className="text-muted-foreground">{fmt(m.benchmark, m.format, benchmark.currency)}</TableCell>
                                         <TableCell>
                                             {has ? (
                                                 <Badge variant={better ? 'success' : 'warning'}>
@@ -130,6 +136,7 @@ function FreshnessBar({ meta }: { meta: KnowledgeMeta | null }) {
 
 interface RecommendationsResultProps {
     customerId: string;
+    industry?: string | null;
     recommendations?: Recommendation[];
     findings?: Finding[];
     optimizationScore?: number | null;
@@ -140,6 +147,7 @@ interface RecommendationsResultProps {
 
 export default function RecommendationsResult({
     customerId,
+    industry = null,
     recommendations = [],
     findings = [],
     optimizationScore = null,
@@ -147,6 +155,7 @@ export default function RecommendationsResult({
     meta = null,
     error = null,
 }: RecommendationsResultProps) {
+    const industryTips = industry ? verticalTips[industry] : undefined;
     return (
         <AppLayout title="Optimization suggestions" subtitle={`For account ${customerId}`}>
             <Head title="Optimization suggestions" />
@@ -234,6 +243,24 @@ export default function RecommendationsResult({
                         </Card>
                     )}
                 </>
+            )}
+
+            {industryTips && industryTips.length > 0 && (
+                <Card className="mb-6">
+                    <CardHeader>
+                        <CardTitle>
+                            <Flame className="h-5 w-5 text-muted-foreground" /> {industry} — tactics for this vertical
+                        </CardTitle>
+                        <CardDescription>
+                            Industry-specific plays on top of the general playbook.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        {industryTips.map((tip, i) => (
+                            <Tip key={i} {...tip} />
+                        ))}
+                    </CardContent>
+                </Card>
             )}
 
             <Card>
