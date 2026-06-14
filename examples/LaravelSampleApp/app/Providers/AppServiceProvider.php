@@ -32,9 +32,32 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        // Binds the Google Ads API client.
+        // Binds the Google Ads API client. Credentials come from environment
+        // variables when a developer token is configured (e.g. Laravel Cloud),
+        // otherwise from a google_ads_php.ini file at the project root (local
+        // development and the Docker image).
         $this->app->singleton('Google\Ads\GoogleAds\Lib\V24\GoogleAdsClient', function () {
-            // Constructs a Google Ads API client configured from the properties file.
+            $developerToken = config('google_ads.developer_token');
+
+            if (!empty($developerToken)) {
+                $oAuth2Credential = (new OAuth2TokenBuilder())
+                    ->withClientId(config('google_ads.oauth2.client_id'))
+                    ->withClientSecret(config('google_ads.oauth2.client_secret'))
+                    ->withRefreshToken(config('google_ads.oauth2.refresh_token'))
+                    ->build();
+
+                $clientBuilder = (new GoogleAdsClientBuilder())
+                    ->withDeveloperToken($developerToken)
+                    ->withOAuth2Credential($oAuth2Credential);
+
+                if (!empty(config('google_ads.login_customer_id'))) {
+                    $clientBuilder->withLoginCustomerId(config('google_ads.login_customer_id'));
+                }
+
+                return $clientBuilder->build();
+            }
+
+            // Falls back to the properties file.
             return (new GoogleAdsClientBuilder())
                 ->fromFile(config('app.google_ads_php_path'))
                 ->withOAuth2Credential((new OAuth2TokenBuilder())
