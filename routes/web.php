@@ -30,12 +30,7 @@ Route::post('logout', 'TeamAccessController@logout')->name('logout');
 // Application routes. Protected by the team password when TEAM_ACCESS_PASSWORD
 // is configured (see App\Http\Middleware\TeamAuthenticate).
 Route::middleware('team.auth')->group(function () {
-    Route::get(
-        '/',
-        function () {
-            return \Inertia\Inertia::render('Dashboard');
-        }
-    );
+    Route::get('/', 'GoogleAdsApiController@overviewAction');
     Route::post(
         'pause-campaign',
         'GoogleAdsApiController@pauseCampaignAction'
