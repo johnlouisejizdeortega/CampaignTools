@@ -1,0 +1,24 @@
+{
+    "_comment": "Directional Google Ads Search benchmarks by industry. These are aggregated third-party averages, NOT guarantees, and should be refreshed periodically. avgCtr and avgCvr are fractions (0.061 = 6.1%); avgCpc and avgCpa are in USD.",
+    "source": {
+        "label": "LocaliQ / WordStream — Google Ads industry benchmarks (Search)",
+        "url": "https://localiq.com/blog/search-advertising-benchmarks/"
+    },
+    "reviewed": "2026-06-13",
+    "currency": "USD",
+    "industries": {
+        "Arts & Entertainment": { "avgCtr": 0.1107, "avgCpc": 1.49, "avgCvr": 0.072, "avgCpa": 24.71 },
+        "Automotive": { "avgCtr": 0.0824, "avgCpc": 2.46, "avgCvr": 0.061, "avgCpa": 33.52 },
+        "Business Services": { "avgCtr": 0.0664, "avgCpc": 3.34, "avgCvr": 0.052, "avgCpa": 62.45 },
+        "Education & Instruction": { "avgCtr": 0.0641, "avgCpc": 2.34, "avgCvr": 0.078, "avgCpa": 49.06 },
+        "Finance & Insurance": { "avgCtr": 0.0612, "avgCpc": 3.85, "avgCvr": 0.058, "avgCpa": 66.34 },
+        "Health & Fitness": { "avgCtr": 0.0658, "avgCpc": 2.62, "avgCvr": 0.078, "avgCpa": 40.74 },
+        "Home & Home Improvement": { "avgCtr": 0.0489, "avgCpc": 4.18, "avgCvr": 0.053, "avgCpa": 75.20 },
+        "Industrial & Commercial": { "avgCtr": 0.0623, "avgCpc": 2.93, "avgCvr": 0.054, "avgCpa": 54.32 },
+        "Legal": { "avgCtr": 0.0492, "avgCpc": 6.75, "avgCvr": 0.057, "avgCpa": 101.40 },
+        "Real Estate": { "avgCtr": 0.0937, "avgCpc": 1.81, "avgCvr": 0.026, "avgCpa": 69.11 },
+        "Retail / E-commerce": { "avgCtr": 0.0666, "avgCpc": 1.35, "avgCvr": 0.031, "avgCpa": 45.27 },
+        "Technology": { "avgCtr": 0.0539, "avgCpc": 3.80, "avgCvr": 0.028, "avgCpa": 133.52 },
+        "Travel & Hospitality": { "avgCtr": 0.0876, "avgCpc": 1.53, "avgCvr": 0.038, "avgCpa": 44.74 }
+    }
+}

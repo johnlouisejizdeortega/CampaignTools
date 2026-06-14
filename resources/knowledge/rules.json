@@ -1,0 +1,162 @@
+{
+    "_comment": "Deterministic Google Ads optimization ruleset. Each rule is evaluated against real account signals (no AI). 'scope' is 'account' or 'campaign'. 'operator' is one of: is_true, is_false, gt, gte, lt, lte. Every rule cites an official Google source and a last-reviewed date.",
+    "version": "1.1.0",
+    "rules": [
+        {
+            "id": "conversion-tracking-missing",
+            "scope": "account",
+            "signal": "conversionTrackingEnabled",
+            "operator": "is_false",
+            "severity": "critical",
+            "title": "Conversion tracking is not set up",
+            "why": "Without conversion tracking, Smart Bidding cannot optimize and you cannot measure which clicks become sales or leads.",
+            "fix": "Create conversion actions (purchase, lead, call) and verify the tag fires, then allow 1–2 weeks of data before judging performance.",
+            "source": {
+                "label": "Google Ads Help — About conversion tracking",
+                "url": "https://support.google.com/google-ads/answer/1722022"
+            },
+            "reviewed": "2026-06-13"
+        },
+        {
+            "id": "low-optimization-score",
+            "scope": "account",
+            "signal": "optimizationScore",
+            "operator": "lt",
+            "threshold": 0.85,
+            "severity": "warning",
+            "title": "Optimization score is below 85%",
+            "why": "Google's Optimization Score estimates how well your account is set to perform. A lower score means there are pending, validated improvements.",
+            "fix": "Open the Recommendations page and apply or dismiss each item; Google shows the score uplift for every recommendation.",
+            "source": {
+                "label": "Google Ads Help — About optimization score",
+                "url": "https://support.google.com/google-ads/answer/9061546"
+            },
+            "reviewed": "2026-06-13"
+        },
+        {
+            "id": "budget-limited",
+            "scope": "campaign",
+            "signal": "budgetLostImpressionShare",
+            "operator": "gt",
+            "threshold": 0.1,
+            "severity": "warning",
+            "title": "Campaign is limited by budget",
+            "why": "Search budget lost impression share above 10% means ads stop showing before the day ends, so you miss eligible traffic.",
+            "fix": "Raise the daily budget on profitable campaigns, or improve efficiency so each dollar buys more clicks.",
+            "source": {
+                "label": "Google Ads Help — About impression share",
+                "url": "https://support.google.com/google-ads/answer/2497703"
+            },
+            "reviewed": "2026-06-13"
+        },
+        {
+            "id": "rank-limited",
+            "scope": "campaign",
+            "signal": "rankLostImpressionShare",
+            "operator": "gt",
+            "threshold": 0.2,
+            "severity": "warning",
+            "title": "Campaign is losing impressions to Ad Rank",
+            "why": "Search rank lost impression share above 20% means ads are held back by low Ad Rank (bid and/or Quality Score), not budget.",
+            "fix": "Improve Quality Score (ad relevance, expected CTR, landing page) and review bids or your bid strategy targets.",
+            "source": {
+                "label": "Google Ads Help — About Ad Rank",
+                "url": "https://support.google.com/google-ads/answer/1722122"
+            },
+            "reviewed": "2026-06-13"
+        },
+        {
+            "id": "low-ctr-vs-benchmark",
+            "scope": "campaign",
+            "signal": "ctrBelowBenchmark",
+            "operator": "is_true",
+            "severity": "info",
+            "title": "Click-through rate is below the account benchmark",
+            "why": "A CTR below comparable inventory usually signals weak ad relevance or missing assets, which also lowers Quality Score.",
+            "fix": "Mirror the keyword in headlines, add more headlines/descriptions, and add sitelink and callout assets.",
+            "source": {
+                "label": "Google Ads Help — About Quality Score",
+                "url": "https://support.google.com/google-ads/answer/6167123"
+            },
+            "reviewed": "2026-06-13"
+        },
+        {
+            "id": "single-ad-per-ad-group",
+            "scope": "campaign",
+            "signal": "hasAdGroupWithSingleAd",
+            "operator": "is_true",
+            "severity": "info",
+            "title": "Some ad groups have only one ad",
+            "why": "With a single ad there is nothing to test, so click-through and conversion rates tend to stagnate.",
+            "fix": "Run at least two responsive search ads per ad group and keep ad rotation set to Optimize.",
+            "source": {
+                "label": "Google Ads Help — Tips for creating effective ads",
+                "url": "https://support.google.com/google-ads/answer/1704392"
+            },
+            "reviewed": "2026-06-13"
+        },
+        {
+            "id": "poor-ad-strength",
+            "scope": "campaign",
+            "signal": "poorAdStrengthCount",
+            "operator": "gt",
+            "threshold": 0,
+            "severity": "warning",
+            "title": "Responsive search ads have \"Poor\" Ad Strength",
+            "why": "Ad Strength measures relevance and diversity of your ad assets; \"Poor\" ads reach fewer auctions and perform worse.",
+            "fix": "Add the suggested headlines and descriptions until Ad Strength reaches \"Good\" or \"Excellent\".",
+            "source": {
+                "label": "Google Ads Help — About Ad Strength",
+                "url": "https://support.google.com/google-ads/answer/9921677"
+            },
+            "reviewed": "2026-06-13"
+        },
+        {
+            "id": "disapproved-ads",
+            "scope": "campaign",
+            "signal": "disapprovedAdCount",
+            "operator": "gt",
+            "threshold": 0,
+            "severity": "critical",
+            "title": "Some ads are disapproved",
+            "why": "Disapproved ads do not serve, so affected ad groups may show no ads at all and lose all their traffic.",
+            "fix": "Open the Ads page, review the policy reason on each disapproved ad, fix the violation, and resubmit for review.",
+            "source": {
+                "label": "Google Ads Help — Understand the status of your ads",
+                "url": "https://support.google.com/google-ads/answer/1704381"
+            },
+            "reviewed": "2026-06-13"
+        },
+        {
+            "id": "spend-without-conversions",
+            "scope": "campaign",
+            "signal": "spendingWithoutConversions",
+            "operator": "is_true",
+            "severity": "warning",
+            "title": "Campaign is spending with zero conversions",
+            "why": "Cost accrued over the last 30 days with no recorded conversions usually points to wasted spend, weak targeting, or missing conversion tracking.",
+            "fix": "Confirm conversion tracking is firing, add negative keywords from the Search Terms report, and tighten targeting; pause the worst offenders if they keep converting at zero.",
+            "source": {
+                "label": "Google Ads Help — Tips to improve performance",
+                "url": "https://support.google.com/google-ads/answer/7686355"
+            },
+            "reviewed": "2026-06-13"
+        },
+        {
+            "id": "low-search-impression-share",
+            "scope": "campaign",
+            "signal": "searchImpressionShare",
+            "operator": "lt",
+            "threshold": 0.5,
+            "severity": "info",
+            "title": "Low search impression share",
+            "why": "Search impression share under 50% means your ads appear in fewer than half of the auctions they were eligible for, capping reach.",
+            "fix": "Address whichever is higher — budget lost or rank lost impression share — by raising budget or improving Quality Score and bids.",
+            "source": {
+                "label": "Google Ads Help — About impression share",
+                "url": "https://support.google.com/google-ads/answer/2497703"
+            },
+            "reviewed": "2026-06-13"
+        }
+    ]
+}

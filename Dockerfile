@@ -1,24 +1,64 @@
-# Sets the PHP image to extend from.
-# See https://hub.docker.com/_/php.
-ARG PHP_IMAGE="apache"
-FROM php:${PHP_IMAGE}
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-ARG USE_C_PROTOBUF=true
+# --- Stage 1: build the React/Inertia frontend (Vite) ---
+FROM node:20-alpine AS frontend
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
 
-RUN apt-get update && apt-get install -y libxml2 zlib1g-dev git unzip
+# --- Stage 2: serve the app over Apache ---
+# A self-contained image that serves the Google Ads Team Dashboard.
+FROM php:8.3-apache
 
-# Install PHP extension(s) required for development.
-RUN docker-php-ext-install bcmath
+# System packages and PHP extensions the app needs. Laravel requires mbstring
+# (not bundled in the base image; needs libonig-dev); bcmath is used by the
+# Google Ads library and zip speeds up Composer. gRPC is intentionally omitted —
+# the library falls back to the REST transport.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git unzip libzip-dev libonig-dev curl \
+    && docker-php-ext-install bcmath zip mbstring \
+    && a2enmod rewrite \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install and configure Composer.
-RUN curl -sS https://getcomposer.org/installer | php
-RUN mv composer.phar /usr/local/bin/composer
+# Point Apache at Laravel's public/ directory.
+ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
+    && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
-# Install and configure the gRPC extension.
-RUN pecl install grpc-1.80.0
-RUN echo 'extension=grpc.so' >> $PHP_INI_DIR/conf.d/grpc.ini
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+WORKDIR /var/www/html
 
-# Install and configure the C implementation of Protobuf extension if needed.
-RUN if [ "$USE_C_PROTOBUF" = "false" ]; then echo 'Using PHP implementation of Protobuf'; else echo 'Using C implementation of Protobuf'; pecl install protobuf-4.33.6; echo 'extension=protobuf.so' >> $PHP_INI_DIR/conf.d/protobuf.ini; fi
+# Install PHP dependencies first (better layer caching), then copy the app.
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-interaction --prefer-dist --no-scripts --optimize-autoloader
 
-WORKDIR "/google-ads-php"
+COPY . /var/www/html
+# Bring in the compiled frontend assets (and SSR bundle) from the build stage.
+COPY --from=frontend /app/public/build /var/www/html/public/build
+COPY --from=frontend /app/bootstrap/ssr /var/www/html/bootstrap/ssr
+RUN composer dump-autoload --optimize \
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
+
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+EXPOSE 80
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD curl -fsS http://localhost/health || exit 1
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["apache2-foreground"]

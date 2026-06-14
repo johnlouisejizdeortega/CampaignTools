@@ -1,4 +1,4 @@
-/.gitattributes export-ignore
-/examples export-ignore
-/tests export-ignore
-/phpunit.xml.dist export-ignore
+* text=auto
+*.css linguist-vendored
+*.scss linguist-vendored
+*.js linguist-vendored
