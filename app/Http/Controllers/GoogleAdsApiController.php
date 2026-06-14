@@ -186,12 +186,10 @@ class GoogleAdsApiController extends Controller
      * Controls a POST or GET request submitted in the context of the "Show Report" form.
      *
      * @param Request $request the HTTP request
-     * @param GoogleAdsClient $googleAdsClient the Google Ads API client
      * @return InertiaResponse the Inertia page response
      */
     public function showReportAction(
-        Request $request,
-        GoogleAdsClient $googleAdsClient
+        Request $request
     ): InertiaResponse|RedirectResponse {
         if ($request->method() === 'POST') {
             // Validates the form inputs before touching the API.
@@ -264,6 +262,10 @@ class GoogleAdsApiController extends Controller
         }
 
         try {
+        // Resolves the API client only after validation has passed, so invalid
+        // input is rejected without ever building a (credential-dependent) client.
+        $googleAdsClient = app(GoogleAdsClient::class);
+
         // Determines the number of the page to load (the first one by default).
         $pageNo = $request->input('page') ?: 1;
 
@@ -358,7 +360,6 @@ class GoogleAdsApiController extends Controller
      * Google Ads API and pairs each one with plain-English guidance.
      *
      * @param Request $request the HTTP request
-     * @param GoogleAdsClient $googleAdsClient the Google Ads API client
      * @return InertiaResponse the Inertia page response
      */
     /**
@@ -439,8 +440,7 @@ class GoogleAdsApiController extends Controller
     }
 
     public function showRecommendationsAction(
-        Request $request,
-        GoogleAdsClient $googleAdsClient
+        Request $request
     ): InertiaResponse {
         $request->validate([
             'customerId' => ['required', 'regex:/^\d{10}$/'],
@@ -458,6 +458,9 @@ class GoogleAdsApiController extends Controller
         $error = null;
 
         try {
+            // Resolves the API client only after validation has passed.
+            $googleAdsClient = app(GoogleAdsClient::class);
+
             // Retrieves all active recommendations for the account.
             $query = 'SELECT recommendation.type, recommendation.campaign '
                 . 'FROM recommendation';
@@ -589,12 +592,10 @@ class GoogleAdsApiController extends Controller
      * Controls a POST request submitted in the context of the "Pause Campaign" form.
      *
      * @param Request $request the HTTP request
-     * @param GoogleAdsClient $googleAdsClient the Google Ads API client
      * @return InertiaResponse the Inertia page response
      */
     public function pauseCampaignAction(
-        Request $request,
-        GoogleAdsClient $googleAdsClient
+        Request $request
     ): InertiaResponse|RedirectResponse {
         // Validates the form inputs before touching the API.
         $request->validate([
@@ -609,6 +610,9 @@ class GoogleAdsApiController extends Controller
         $campaignId = $request->input('campaignId');
 
         try {
+        // Resolves the API client only after validation has passed.
+        $googleAdsClient = app(GoogleAdsClient::class);
+
         // Deducts the campaign resource name from the given IDs.
         $campaignResourceName = ResourceNames::forCampaign($customerId, $campaignId);
 
