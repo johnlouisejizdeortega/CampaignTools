@@ -61,6 +61,28 @@ export interface KnowledgeMeta {
     benchmarksReviewed?: string | null;
 }
 
+export interface OverviewSeriesPoint {
+    date: string;
+    clicks: number;
+    impressions: number;
+    cost: number;
+}
+
+export interface OverviewData {
+    customerId: string;
+    currency: string;
+    totals: {
+        clicks: number;
+        impressions: number;
+        cost: number;
+        avgCpc: number;
+        conversions: number;
+    };
+    optimizationScore: number | null;
+    series: OverviewSeriesPoint[];
+    error?: string | null;
+}
+
 export interface Flash {
     error?: string | null;
     success?: string | null;

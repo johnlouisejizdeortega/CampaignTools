@@ -186,12 +186,10 @@ class GoogleAdsApiController extends Controller
      * Controls a POST or GET request submitted in the context of the "Show Report" form.
      *
      * @param Request $request the HTTP request
-     * @param GoogleAdsClient $googleAdsClient the Google Ads API client
      * @return InertiaResponse the Inertia page response
      */
     public function showReportAction(
-        Request $request,
-        GoogleAdsClient $googleAdsClient
+        Request $request
     ): InertiaResponse|RedirectResponse {
         if ($request->method() === 'POST') {
             // Validates the form inputs before touching the API.
@@ -264,6 +262,10 @@ class GoogleAdsApiController extends Controller
         }
 
         try {
+        // Resolves the API client only after validation has passed, so invalid
+        // input is rejected without ever building a (credential-dependent) client.
+        $googleAdsClient = app(GoogleAdsClient::class);
+
         // Determines the number of the page to load (the first one by default).
         $pageNo = $request->input('page') ?: 1;
 
@@ -358,12 +360,87 @@ class GoogleAdsApiController extends Controller
      * Google Ads API and pairs each one with plain-English guidance.
      *
      * @param Request $request the HTTP request
-     * @param GoogleAdsClient $googleAdsClient the Google Ads API client
      * @return InertiaResponse the Inertia page response
      */
+    /**
+     * Renders the Google Ads-style Overview. When a valid Customer ID is passed
+     * as a query parameter it loads the account's real last-30-day metrics and a
+     * daily series for the chart; otherwise it shows the "connect an account"
+     * state. The page always renders (tools below the fold stay usable).
+     */
+    public function overviewAction(Request $request): InertiaResponse
+    {
+        $customerId = (string) $request->query('customerId', '');
+        $overview = null;
+
+        if ($customerId !== '') {
+            // Invalid IDs short-circuit to a friendly error rather than an API call.
+            if (!preg_match('/^\d{10}$/', $customerId)) {
+                $overview = ['customerId' => $customerId, 'error' => 'Enter a 10-digit Customer ID without dashes.'];
+            } else {
+                try {
+                    // Resolve the client lazily so the empty Overview never depends
+                    // on Google Ads credentials being present.
+                    $googleAdsClient = app(GoogleAdsClient::class);
+                    $service = $googleAdsClient->getGoogleAdsServiceClient();
+
+                    // Real aggregate metrics + optimization score for the account.
+                    $signals = (new AccountSignalsFetcher($googleAdsClient))->fetch($customerId);
+                    $account = $signals['account'] ?? [];
+
+                    // Account currency (falls back to USD if not returned).
+                    $currency = 'USD';
+                    $curResp = $service->search(SearchGoogleAdsRequest::build(
+                        $customerId,
+                        'SELECT customer.currency_code FROM customer LIMIT 1'
+                    ));
+                    foreach ($curResp->iterateAllElements() as $row) {
+                        $currency = $row->getCustomer()->getCurrencyCode() ?: 'USD';
+                    }
+
+                    // Daily series for the Clicks/Impressions chart.
+                    $series = [];
+                    $seriesResp = $service->search(SearchGoogleAdsRequest::build(
+                        $customerId,
+                        'SELECT segments.date, metrics.clicks, metrics.impressions, '
+                        . 'metrics.cost_micros FROM customer '
+                        . 'WHERE segments.date DURING LAST_30_DAYS ORDER BY segments.date'
+                    ));
+                    foreach ($seriesResp->iterateAllElements() as $row) {
+                        $m = $row->getMetrics();
+                        $series[] = [
+                            'date' => date('M j', strtotime($row->getSegments()->getDate())),
+                            'clicks' => (float) $m->getClicks(),
+                            'impressions' => (float) $m->getImpressions(),
+                            'cost' => $m->getCostMicros() / 1_000_000,
+                        ];
+                    }
+
+                    $overview = [
+                        'customerId' => $customerId,
+                        'currency' => $currency,
+                        'totals' => [
+                            'clicks' => (float) ($account['clicks'] ?? 0),
+                            'impressions' => (float) ($account['impressions'] ?? 0),
+                            'cost' => (float) ($account['cost'] ?? 0),
+                            'avgCpc' => (float) ($account['cpc'] ?? 0),
+                            'conversions' => (float) ($account['conversions'] ?? 0),
+                        ],
+                        'optimizationScore' => $signals['optimizationScore'] ?? null,
+                        'series' => $series,
+                        'error' => null,
+                    ];
+                } catch (Throwable $e) {
+                    $overview = ['customerId' => $customerId, 'error' => $this->friendlyApiError($e)];
+                }
+            }
+        }
+
+        return Inertia::render('Dashboard', ['overview' => $overview]);
+    }
+
     public function showRecommendationsAction(
-        Request $request,
-        GoogleAdsClient $googleAdsClient
+        Request $request
     ): InertiaResponse {
         $request->validate([
             'customerId' => ['required', 'regex:/^\d{10}$/'],
@@ -381,6 +458,9 @@ class GoogleAdsApiController extends Controller
         $error = null;
 
         try {
+            // Resolves the API client only after validation has passed.
+            $googleAdsClient = app(GoogleAdsClient::class);
+
             // Retrieves all active recommendations for the account.
             $query = 'SELECT recommendation.type, recommendation.campaign '
                 . 'FROM recommendation';
@@ -512,12 +592,10 @@ class GoogleAdsApiController extends Controller
      * Controls a POST request submitted in the context of the "Pause Campaign" form.
      *
      * @param Request $request the HTTP request
-     * @param GoogleAdsClient $googleAdsClient the Google Ads API client
      * @return InertiaResponse the Inertia page response
      */
     public function pauseCampaignAction(
-        Request $request,
-        GoogleAdsClient $googleAdsClient
+        Request $request
     ): InertiaResponse|RedirectResponse {
         // Validates the form inputs before touching the API.
         $request->validate([
@@ -532,6 +610,9 @@ class GoogleAdsApiController extends Controller
         $campaignId = $request->input('campaignId');
 
         try {
+        // Resolves the API client only after validation has passed.
+        $googleAdsClient = app(GoogleAdsClient::class);
+
         // Deducts the campaign resource name from the given IDs.
         $campaignResourceName = ResourceNames::forCampaign($customerId, $campaignId);
 

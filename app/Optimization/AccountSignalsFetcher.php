@@ -77,7 +77,7 @@ class AccountSignalsFetcher
             $response = $service->search(SearchGoogleAdsRequest::build(
                 $customerId,
                 'SELECT metrics.ctr, metrics.average_cpc, metrics.clicks, '
-                . 'metrics.conversions, metrics.cost_micros '
+                . 'metrics.impressions, metrics.conversions, metrics.cost_micros '
                 . 'FROM customer WHERE segments.date DURING LAST_30_DAYS'
             ));
             foreach ($response->iterateAllElements() as $row) {
@@ -90,6 +90,11 @@ class AccountSignalsFetcher
                     'cpc' => $m->getAverageCpc() / 1_000_000,
                     'cvr' => $clicks > 0 ? $conversions / $clicks : null,
                     'cpa' => $conversions > 0 ? $cost / $conversions : null,
+                    // Raw totals power the Overview scorecards.
+                    'clicks' => $clicks,
+                    'impressions' => $m->getImpressions(),
+                    'conversions' => $conversions,
+                    'cost' => $cost,
                 ];
             }
         } catch (\Throwable $e) {

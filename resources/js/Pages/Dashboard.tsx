@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
-import { Head, useForm } from '@inertiajs/react';
-import { BarChart3, CirclePause, Search, ShieldCheck } from 'lucide-react';
+import { Head, router, useForm } from '@inertiajs/react';
+import { BarChart3, ChevronDown, ChevronLeft, ChevronRight, CirclePause, Gauge, Plus, Search, ShieldCheck } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,35 +10,166 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import Tip from '@/components/Tip';
+import Scorecard from '@/components/Scorecard';
+import MetricChart from '@/components/MetricChart';
 import { playbook } from '@/data/playbook';
 import { industries } from '@/data/industries';
+import type { OverviewData } from '@/types';
+
+const CURRENCY_SYMBOL: Record<string, string> = { USD: '$', GBP: '£', EUR: '€', PHP: '₱', AUD: 'A$', CAD: 'C$' };
+const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
+const sym = (c: string) => CURRENCY_SYMBOL[c] ?? `${c} `;
+
+/* ----------------------------- Overview header ---------------------------- */
+
+function FilterBar() {
+    const chip = 'flex items-center gap-1.5 rounded border bg-card px-3 py-1.5 text-sm text-foreground';
+    return (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+            <span className={chip}>All campaigns <ChevronDown className="h-4 w-4 text-muted-foreground" /></span>
+            <span className={chip}>Select a campaign <ChevronDown className="h-4 w-4 text-muted-foreground" /></span>
+            <span className="ml-1 text-sm text-muted-foreground">Filters</span>
+            <span className="rounded-full bg-muted px-3 py-1 text-xs text-foreground">Campaign status: Enabled, Paused</span>
+            <span className="rounded-full bg-muted px-3 py-1 text-xs text-foreground">Ad group status: Enabled, Paused</span>
+            <button className="text-sm font-medium text-primary">Add filter</button>
+        </div>
+    );
+}
+
+function OverviewHeader() {
+    return (
+        <>
+            <div className="mb-4 flex items-center justify-between">
+                <h1 className="text-[1.75rem] font-normal tracking-tight text-foreground">Overview</h1>
+                <div className="flex items-center gap-2 text-sm">
+                    <span className="text-muted-foreground">Custom</span>
+                    <div className="flex items-center gap-2 rounded-full border bg-card px-3 py-1.5">
+                        Last 30 days
+                        <span className="flex items-center gap-1 text-muted-foreground">
+                            <ChevronLeft className="h-4 w-4" /><ChevronRight className="h-4 w-4" />
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div className="mb-5 flex items-center gap-6 border-b">
+                <span className="-mb-px border-b-[3px] border-primary pb-2 text-sm font-medium text-foreground">Home</span>
+                <span className="pb-2 text-sm text-primary">+ Add custom view</span>
+            </div>
+        </>
+    );
+}
+
+/* --------------------------- Overview metrics ----------------------------- */
+
+function OptimizationScoreCard({ score }: { score: number | null }) {
+    const pct = score === null || score === undefined ? null : Math.round(score * 1000) / 10;
+    return (
+        <Card>
+            <CardHeader className="pb-2">
+                <CardTitle className="text-base"><Gauge className="h-5 w-5 text-muted-foreground" /> Optimization score</CardTitle>
+            </CardHeader>
+            <CardContent>
+                {pct === null ? (
+                    <p className="text-sm text-muted-foreground">Connect an account to see its optimization score.</p>
+                ) : (
+                    <>
+                        <div className="text-4xl font-normal text-primary">{pct}%</div>
+                        <div className="mt-3 h-1.5 w-full rounded-full bg-muted">
+                            <div className="h-1.5 rounded-full bg-primary" style={{ width: `${pct}%` }} />
+                        </div>
+                        <p className="mt-3 text-sm text-muted-foreground">
+                            Apply Google's recommendations to raise this score.
+                        </p>
+                    </>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+function OverviewMetrics({ overview }: { overview: OverviewData }) {
+    const t = overview.totals;
+    const c = sym(overview.currency);
+    return (
+        <>
+            <Card className="mb-5 overflow-hidden p-0">
+                <div className="grid grid-cols-2 border-t md:grid-cols-4">
+                    <Scorecard label="Clicks" value={compact.format(t.clicks)} highlight="blue" />
+                    <Scorecard label="Impressions" value={compact.format(t.impressions)} highlight="red" />
+                    <Scorecard label="Avg. CPC" value={`${c}${t.avgCpc.toFixed(2)}`} />
+                    <Scorecard label="Cost" value={`${c}${compact.format(t.cost)}`} />
+                </div>
+                <div className="p-5">
+                    {overview.series.length >= 2 ? (
+                        <MetricChart series={overview.series} />
+                    ) : (
+                        <p className="py-10 text-center text-sm text-muted-foreground">No daily data available for this period.</p>
+                    )}
+                </div>
+            </Card>
+            <div className="mb-6 grid gap-5 md:grid-cols-3">
+                <OptimizationScoreCard score={overview.optimizationScore} />
+                <Card className="md:col-span-2">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-base"><BarChart3 className="h-5 w-5 text-muted-foreground" /> Account summary</CardTitle>
+                        <CardDescription>Last 30 days · account {overview.customerId}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
+                        <div><div className="text-muted-foreground">Clicks</div><div className="text-lg">{compact.format(t.clicks)}</div></div>
+                        <div><div className="text-muted-foreground">Impressions</div><div className="text-lg">{compact.format(t.impressions)}</div></div>
+                        <div><div className="text-muted-foreground">Conversions</div><div className="text-lg">{compact.format(t.conversions)}</div></div>
+                        <div><div className="text-muted-foreground">Cost</div><div className="text-lg">{c}{compact.format(t.cost)}</div></div>
+                    </CardContent>
+                </Card>
+            </div>
+        </>
+    );
+}
+
+function ConnectAccount({ error }: { error?: string | null }) {
+    const form = useForm({ customerId: '' });
+    const submit = (e: FormEvent) => {
+        e.preventDefault();
+        router.get('/', { customerId: form.data.customerId }, { preserveScroll: true });
+    };
+    return (
+        <Card className="mb-6">
+            <CardHeader>
+                <CardTitle className="text-base"><Search className="h-5 w-5 text-muted-foreground" /> Connect your account</CardTitle>
+                <CardDescription>Enter a 10-digit Customer ID (no dashes) to load your live Overview.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <form onSubmit={submit} className="flex max-w-md gap-2">
+                    <Input
+                        placeholder="1234567890"
+                        value={form.data.customerId}
+                        onChange={(e) => form.setData('customerId', e.target.value)}
+                        inputMode="numeric"
+                    />
+                    <Button type="submit">View overview</Button>
+                </form>
+                {error && <p className="mt-2 text-xs text-destructive">Couldn't load that account: {String(error).slice(0, 160)}</p>}
+            </CardContent>
+        </Card>
+    );
+}
+
+/* ------------------------------ Tools (real) ------------------------------ */
 
 function ShowReportForm() {
     const form = useForm({
-        customerId: '',
-        reportType: 'campaign',
-        reportRange: 'YESTERDAY',
-        entriesPerPage: '20',
-        impressions: true,
-        clicks: true,
-        ctr: true,
+        customerId: '', reportType: 'campaign', reportRange: 'YESTERDAY',
+        entriesPerPage: '20', impressions: true, clicks: true, ctr: true,
     });
-
     const submit = (e: FormEvent) => {
         e.preventDefault();
         form.transform((data) => {
             const out: Record<string, string> = {
-                customerId: data.customerId,
-                reportType: data.reportType,
-                reportRange: data.reportRange,
-                entriesPerPage: data.entriesPerPage,
+                customerId: data.customerId, reportType: data.reportType,
+                reportRange: data.reportRange, entriesPerPage: data.entriesPerPage,
             };
             if (data.impressions) out.impressions = 'metrics.impressions';
             if (data.clicks) out.clicks = 'metrics.clicks';
@@ -47,34 +178,24 @@ function ShowReportForm() {
         });
         form.post('/show-report');
     };
-
     const metric = (key: 'impressions' | 'clicks' | 'ctr', label: string) => (
         <label className="flex items-center gap-2 text-sm">
-            <Checkbox
-                checked={form.data[key]}
-                onCheckedChange={(v) => form.setData(key, Boolean(v))}
-            />
+            <Checkbox checked={form.data[key]} onCheckedChange={(v) => form.setData(key, Boolean(v))} />
             {label}
         </label>
     );
-
     return (
         <Card>
             <CardHeader>
-                <CardTitle><BarChart3 className="h-5 w-5 text-muted-foreground" /> Show a report</CardTitle>
+                <CardTitle className="text-base"><BarChart3 className="h-5 w-5 text-muted-foreground" /> Show a report</CardTitle>
                 <CardDescription>Pull live performance data for an account.</CardDescription>
             </CardHeader>
             <CardContent>
                 <form onSubmit={submit} className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="reportCustomerId">Customer ID</Label>
-                        <Input
-                            id="reportCustomerId"
-                            placeholder="1234567890"
-                            value={form.data.customerId}
-                            onChange={(e) => form.setData('customerId', e.target.value)}
-                            required
-                        />
+                        <Input id="reportCustomerId" placeholder="1234567890" value={form.data.customerId}
+                            onChange={(e) => form.setData('customerId', e.target.value)} required />
                         {form.errors.customerId && <p className="text-xs text-destructive">{form.errors.customerId}</p>}
                     </div>
                     <div className="space-y-2">
@@ -120,9 +241,7 @@ function ShowReportForm() {
                             </Select>
                         </div>
                     </div>
-                    <Button type="submit" disabled={form.processing}>
-                        <Search className="h-4 w-4" /> Show report
-                    </Button>
+                    <Button type="submit" disabled={form.processing}><Search className="h-4 w-4" /> Show report</Button>
                 </form>
             </CardContent>
         </Card>
@@ -132,47 +251,28 @@ function ShowReportForm() {
 function PauseCampaignForm() {
     const form = useForm({ customerId: '', campaignId: '' });
     const [confirming, setConfirming] = useState(false);
-
-    const askConfirm = (e: FormEvent) => {
-        e.preventDefault();
-        setConfirming(true);
-    };
-    const confirmPause = () => {
-        setConfirming(false);
-        form.post('/pause-campaign');
-    };
-
+    const askConfirm = (e: FormEvent) => { e.preventDefault(); setConfirming(true); };
+    const confirmPause = () => { setConfirming(false); form.post('/pause-campaign'); };
     return (
         <Card>
             <CardHeader>
-                <CardTitle><CirclePause className="h-5 w-5 text-muted-foreground" /> Pause a campaign</CardTitle>
+                <CardTitle className="text-base"><CirclePause className="h-5 w-5 text-muted-foreground" /> Pause a campaign</CardTitle>
                 <CardDescription>Temporarily stop a live campaign from spending.</CardDescription>
             </CardHeader>
             <CardContent>
                 <form onSubmit={askConfirm} className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="pauseCustomerId">Customer ID</Label>
-                        <Input
-                            id="pauseCustomerId"
-                            placeholder="1234567890"
-                            value={form.data.customerId}
-                            onChange={(e) => form.setData('customerId', e.target.value)}
-                            required
-                        />
+                        <Input id="pauseCustomerId" placeholder="1234567890" value={form.data.customerId}
+                            onChange={(e) => form.setData('customerId', e.target.value)} required />
                         {form.errors.customerId && <p className="text-xs text-destructive">{form.errors.customerId}</p>}
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="campaignId">Campaign ID</Label>
-                        <Input
-                            id="campaignId"
-                            placeholder="1234567890"
-                            value={form.data.campaignId}
-                            onChange={(e) => form.setData('campaignId', e.target.value)}
-                            required
-                        />
+                        <Input id="campaignId" placeholder="1234567890" value={form.data.campaignId}
+                            onChange={(e) => form.setData('campaignId', e.target.value)} required />
                         {form.errors.campaignId && <p className="text-xs text-destructive">{form.errors.campaignId}</p>}
                     </div>
-
                     {confirming ? (
                         <Alert variant="destructive">
                             <AlertDescription>
@@ -181,12 +281,8 @@ function PauseCampaignForm() {
                                     <strong>{form.data.customerId}</strong>? It will stop spending immediately.
                                 </p>
                                 <div className="flex gap-2">
-                                    <Button type="button" variant="destructive" size="sm" onClick={confirmPause} disabled={form.processing}>
-                                        Yes, pause it
-                                    </Button>
-                                    <Button type="button" variant="outline" size="sm" onClick={() => setConfirming(false)}>
-                                        Cancel
-                                    </Button>
+                                    <Button type="button" variant="destructive" size="sm" onClick={confirmPause} disabled={form.processing}>Yes, pause it</Button>
+                                    <Button type="button" variant="outline" size="sm" onClick={() => setConfirming(false)}>Cancel</Button>
                                 </div>
                             </AlertDescription>
                         </Alert>
@@ -203,20 +299,15 @@ function OptimizationPanel() {
     const form = useForm({ customerId: '', industry: 'none' });
     const submit = (e: FormEvent) => {
         e.preventDefault();
-        form.transform((data) => ({
-            customerId: data.customerId,
-            industry: data.industry === 'none' ? '' : data.industry,
-        }));
+        form.transform((data) => ({ customerId: data.customerId, industry: data.industry === 'none' ? '' : data.industry }));
         form.post('/recommendations');
     };
     return (
         <Card>
             <CardHeader>
-                <CardTitle>
+                <CardTitle className="text-base">
                     Optimization suggestions
-                    <Badge variant="secondary">
-                        <ShieldCheck className="mr-1 h-3 w-3" /> Rules-based · sourced
-                    </Badge>
+                    <Badge variant="secondary"><ShieldCheck className="mr-1 h-3 w-3" /> Rules-based · sourced</Badge>
                 </CardTitle>
                 <CardDescription>
                     A deterministic analysis of your real account data plus Google's own
@@ -227,13 +318,8 @@ function OptimizationPanel() {
                 <form onSubmit={submit} className="flex flex-col gap-3 sm:flex-row sm:items-end">
                     <div className="w-full space-y-2 sm:max-w-xs">
                         <Label htmlFor="optCustomerId">Customer ID</Label>
-                        <Input
-                            id="optCustomerId"
-                            placeholder="1234567890"
-                            value={form.data.customerId}
-                            onChange={(e) => form.setData('customerId', e.target.value)}
-                            required
-                        />
+                        <Input id="optCustomerId" placeholder="1234567890" value={form.data.customerId}
+                            onChange={(e) => form.setData('customerId', e.target.value)} required />
                         {form.errors.customerId && <p className="text-xs text-destructive">{form.errors.customerId}</p>}
                     </div>
                     <div className="w-full space-y-2 sm:max-w-xs">
@@ -242,23 +328,16 @@ function OptimizationPanel() {
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="none">No benchmark</SelectItem>
-                                {industries.map((name) => (
-                                    <SelectItem key={name} value={name}>{name}</SelectItem>
-                                ))}
+                                {industries.map((name) => (<SelectItem key={name} value={name}>{name}</SelectItem>))}
                             </SelectContent>
                         </Select>
                     </div>
                     <Button type="submit" disabled={form.processing}>Analyze</Button>
                 </form>
-
                 <div>
-                    <h3 className="mb-3 text-sm font-semibold">
-                        Optimization playbook — common problems &amp; how to fix them
-                    </h3>
+                    <h3 className="mb-3 text-sm font-semibold">Optimization playbook — common problems &amp; how to fix them</h3>
                     <div className="space-y-3">
-                        {playbook.map((tip, i) => (
-                            <Tip key={i} {...tip} />
-                        ))}
+                        {playbook.map((tip, i) => (<Tip key={i} {...tip} />))}
                     </div>
                 </div>
             </CardContent>
@@ -266,28 +345,29 @@ function OptimizationPanel() {
     );
 }
 
-export default function Dashboard() {
+/* -------------------------------- Page ------------------------------------ */
+
+export default function Dashboard({ overview = null }: { overview?: OverviewData | null }) {
+    const connected = overview && !overview.error;
     return (
-        <AppLayout
-            title="Dashboard"
-            subtitle="Manage campaigns, pull reports, and get optimization suggestions."
-        >
-            <Head title="Dashboard" />
-            <div className="space-y-5">
-                <Alert variant="muted">
-                    <AlertDescription>
-                        Enter a 10-digit <strong>Customer ID</strong> (no dashes) in any panel below.
-                        Connecting an account requires a configured{' '}
-                        <code className="rounded bg-background px-1 py-0.5">google_ads_php.ini</code>{' '}
-                        on the server — see <code className="rounded bg-background px-1 py-0.5">TEAM_SETUP.md</code>.
-                    </AlertDescription>
-                </Alert>
-                <div className="grid gap-5 md:grid-cols-2">
-                    <ShowReportForm />
-                    <PauseCampaignForm />
-                </div>
-                <OptimizationPanel />
+        <AppLayout>
+            <Head title="Overview" />
+            <FilterBar />
+            <OverviewHeader />
+
+            {connected
+                ? <OverviewMetrics overview={overview as OverviewData} />
+                : <ConnectAccount error={overview?.error} />}
+
+            <div className="mb-3 flex items-center gap-2">
+                <Plus className="h-4 w-4 text-muted-foreground" />
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Tools</h2>
             </div>
+            <div className="grid gap-5 md:grid-cols-2" id="campaigns">
+                <div id="report"><ShowReportForm /></div>
+                <PauseCampaignForm />
+            </div>
+            <div className="mt-5" id="optimization"><OptimizationPanel /></div>
         </AppLayout>
     );
 }

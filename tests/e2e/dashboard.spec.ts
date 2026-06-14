@@ -12,7 +12,7 @@ test('health endpoint responds ok', async ({ request }) => {
 
 test('dashboard renders the three tools', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible();
     await expect(page.getByText('Show a report')).toBeVisible();
     await expect(page.getByText('Pause a campaign')).toBeVisible();
     await expect(page.getByText('Optimization suggestions')).toBeVisible();
@@ -33,5 +33,5 @@ test('client-side validation blocks an invalid customer id', async ({ page }) =>
     // A too-short id keeps us on the page (server-side regex also guards this).
     await page.locator('#reportCustomerId').fill('123');
     await page.getByRole('button', { name: 'Show report' }).click();
-    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible();
 });
