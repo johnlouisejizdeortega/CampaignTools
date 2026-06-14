@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import type { ComponentType, MouseEvent as ReactMouseEvent, ReactNode } from 'react';
 import {
@@ -41,6 +41,11 @@ const RESULT_PATH: Record<string, string> = {
     optimization: '/recommendations',
 };
 
+// Formats a 10-digit Customer ID the way Google does: 123-456-7890.
+function formatCustomerId(id: string): string {
+    return id.length === 10 ? `${id.slice(0, 3)}-${id.slice(3, 6)}-${id.slice(6)}` : id;
+}
+
 function useActiveFeature() {
     const pathname = (usePage().url ?? '/').split('?')[0].split('#')[0];
     const [hash, setHash] = useState('');
@@ -58,42 +63,65 @@ function useActiveFeature() {
     };
 }
 
-function TopBar({ authenticated }: { authenticated: boolean }) {
+function TopBar({ authenticated, onToggleNav }: { authenticated: boolean; onToggleNav: () => void }) {
+    const searchRef = useRef<HTMLInputElement>(null);
+    const [query, setQuery] = useState('');
+
+    // The currently-loaded account, if any (the Overview is loaded via ?customerId=).
+    const currentId = typeof window !== 'undefined'
+        ? new URLSearchParams(window.location.search).get('customerId')
+        : null;
+
+    // Search loads an account by Customer ID — the core action of this app.
+    const submitSearch = (e: FormEvent) => {
+        e.preventDefault();
+        const id = query.replace(/\D/g, '');
+        if (id.length === 10) router.get('/', { customerId: id });
+    };
+
     return (
         <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b bg-card px-3 sm:px-4">
-            <button className="rounded-full p-2 text-muted-foreground hover:bg-muted" aria-label="Menu">
+            <button onClick={onToggleNav} className="rounded-full p-2 text-muted-foreground hover:bg-muted" aria-label="Toggle navigation" title="Toggle navigation">
                 <Menu className="h-5 w-5" />
             </button>
             <Link href="/" className="flex items-center gap-2">
                 <GoogleAdsLogo className="h-7 w-7" />
                 <span className="hidden text-xl tracking-tight text-foreground sm:inline">Google Ads</span>
             </Link>
-            <span className="ml-1 hidden items-center gap-1 rounded-full px-2 py-1 text-sm text-muted-foreground md:flex">
-                <span className="font-medium text-foreground">Account</span>
+            <button
+                onClick={() => searchRef.current?.focus()}
+                className="ml-1 hidden items-center gap-1 rounded-full px-2 py-1 text-sm text-muted-foreground hover:bg-muted md:flex"
+                title="Switch account"
+            >
+                <span className="font-medium text-foreground">{currentId ? formatCustomerId(currentId) : 'Select account'}</span>
                 <ChevronDown className="h-4 w-4" />
-            </span>
+            </button>
 
-            <div className="mx-auto flex w-full max-w-xl items-center gap-2 rounded-full bg-muted px-4 py-2 text-muted-foreground">
+            <form role="search" onSubmit={submitSearch} className="mx-auto flex w-full max-w-xl items-center gap-2 rounded-full bg-muted px-4 py-2 text-muted-foreground focus-within:ring-2 focus-within:ring-ring">
                 <Search className="h-4 w-4 shrink-0" />
                 <input
+                    ref={searchRef}
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    inputMode="numeric"
                     className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-                    placeholder="Search for a page or campaign"
-                    aria-label="Search"
+                    placeholder="Enter a 10-digit Customer ID and press Enter"
+                    aria-label="Load an account by Customer ID"
                 />
-            </div>
+            </form>
 
             <div className="flex items-center gap-1">
                 <ThemeToggle />
-                <button className="hidden rounded-full p-2 text-muted-foreground hover:bg-muted sm:block" aria-label="Refresh" onClick={() => router.reload()}>
+                <button className="hidden rounded-full p-2 text-muted-foreground hover:bg-muted sm:block" aria-label="Refresh" title="Refresh" onClick={() => router.reload()}>
                     <RefreshCw className="h-5 w-5" />
                 </button>
-                <a href="https://support.google.com/google-ads" target="_blank" rel="noreferrer" className="hidden rounded-full p-2 text-muted-foreground hover:bg-muted sm:block" aria-label="Help">
+                <a href="https://support.google.com/google-ads" target="_blank" rel="noreferrer" className="hidden rounded-full p-2 text-muted-foreground hover:bg-muted sm:block" aria-label="Help" title="Help">
                     <HelpCircle className="h-5 w-5" />
                 </a>
-                <button className="relative rounded-full p-2 text-muted-foreground hover:bg-muted" aria-label="Notifications">
+                <a href="/#optimization" className="relative rounded-full p-2 text-muted-foreground hover:bg-muted" aria-label="Recommendations" title="Recommendations & alerts">
                     <Bell className="h-5 w-5" />
                     <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-destructive" />
-                </button>
+                </a>
                 {authenticated && (
                     <button
                         onClick={() => router.post('/logout')}
@@ -109,7 +137,7 @@ function TopBar({ authenticated }: { authenticated: boolean }) {
     );
 }
 
-function Sidebar() {
+function Sidebar({ navOpen }: { navOpen: boolean }) {
     const isActive = useActiveFeature();
 
     // On the Overview, intercept the "Overview" link to smooth-scroll to the top
@@ -156,28 +184,30 @@ function Sidebar() {
                 })}
             </nav>
 
-            {/* Nav panel — labelled rows for the same working features */}
-            <nav className="w-64 border-r bg-card py-3 pr-2">
-                {FEATURES.map((f) => {
-                    const active = isActive(f);
-                    return (
-                        <a
-                            key={f.id}
-                            href={f.href}
-                            onClick={(e) => handleNav(e, f)}
-                            className={`mb-0.5 flex items-start gap-3 rounded-r-full py-2 pl-6 pr-3 ${
-                                active ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-muted'
-                            }`}
-                        >
-                            <f.icon className="mt-0.5 h-5 w-5 shrink-0" />
-                            <span className="min-w-0">
-                                <span className={`block text-sm ${active ? 'font-medium' : ''}`}>{f.label}</span>
-                                <span className="block truncate text-xs text-muted-foreground">{f.desc}</span>
-                            </span>
-                        </a>
-                    );
-                })}
-            </nav>
+            {/* Nav panel — labelled rows for the same working features (collapsible) */}
+            {navOpen && (
+                <nav className="w-64 border-r bg-card py-3 pr-2">
+                    {FEATURES.map((f) => {
+                        const active = isActive(f);
+                        return (
+                            <a
+                                key={f.id}
+                                href={f.href}
+                                onClick={(e) => handleNav(e, f)}
+                                className={`mb-0.5 flex items-start gap-3 rounded-r-full py-2 pl-6 pr-3 ${
+                                    active ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-muted'
+                                }`}
+                            >
+                                <f.icon className="mt-0.5 h-5 w-5 shrink-0" />
+                                <span className="min-w-0">
+                                    <span className={`block text-sm ${active ? 'font-medium' : ''}`}>{f.label}</span>
+                                    <span className="block truncate text-xs text-muted-foreground">{f.desc}</span>
+                                </span>
+                            </a>
+                        );
+                    })}
+                </nav>
+            )}
         </div>
     );
 }
@@ -185,6 +215,7 @@ function Sidebar() {
 export default function AppLayout({ title, subtitle, authenticated = true, children }: AppLayoutProps) {
     const page = usePage<SharedProps>();
     const flash = page.props.flash ?? {};
+    const [navOpen, setNavOpen] = useState(true);
 
     // When arriving from another page at e.g. "/#report", scroll the target tool
     // into view once the Overview has mounted.
@@ -197,9 +228,9 @@ export default function AppLayout({ title, subtitle, authenticated = true, child
 
     return (
         <div className="min-h-screen bg-background">
-            <TopBar authenticated={authenticated} />
+            <TopBar authenticated={authenticated} onToggleNav={() => setNavOpen((v) => !v)} />
             <div className="flex">
-                <Sidebar />
+                <Sidebar navOpen={navOpen} />
                 <main className="min-w-0 flex-1">
                     <div className="mx-auto max-w-[1280px] px-4 py-6 sm:px-6">
                         {(title || subtitle) && (
