@@ -46,6 +46,38 @@ class GoogleAdsApiController extends Controller
         'customer' => ['customer.id']
     ];
 
+    // The only metric fields a user may add to a report. Restricting to this
+    // allowlist prevents arbitrary expressions from being injected into the GAQL
+    // SELECT clause.
+    private const ALLOWED_METRIC_FIELDS = [
+        'metrics.impressions',
+        'metrics.clicks',
+        'metrics.ctr',
+    ];
+
+    /**
+     * Builds the validated list of GAQL fields for a report: the default
+     * resource fields for the report type plus any requested metric fields that
+     * are on the allowlist (everything else is dropped). Public and static so it
+     * can be unit-tested independently of the API.
+     *
+     * @param string $reportType the report type (already validated)
+     * @param array<string, mixed> $requestedFields the raw extra request inputs
+     * @return array<int, string> the safe field list
+     */
+    public static function selectFieldsFor(string $reportType, array $requestedFields): array
+    {
+        $metrics = array_values(array_intersect(
+            array_values($requestedFields),
+            self::ALLOWED_METRIC_FIELDS
+        ));
+
+        return array_merge(
+            self::REPORT_TYPE_TO_DEFAULT_SELECTED_FIELDS[$reportType] ?? [],
+            $metrics
+        );
+    }
+
     // The limit of the number of the returned results. This is set to prevent you from accidentally
     // fetching a very large number of campaigns and freezing your browser. Change it to a larger
     // number if you're sure that your request doesn't result in too many results.
@@ -178,8 +210,12 @@ class GoogleAdsApiController extends Controller
             $reportRange = $request->input('reportRange');
             $entriesPerPage = $request->input('entriesPerPage');
 
-            // Retrieves the list of metric fields to select filtering out the static ones.
-            $selectedFields = array_values(
+            // Builds the field list from the request, but only from a strict
+            // allowlist so that nothing arbitrary can be injected into the GAQL
+            // SELECT clause. The legitimate UI only ever sends the metric values
+            // below; anything else is discarded.
+            $selectedFields = self::selectFieldsFor(
+                $reportType,
                 $request->except(
                     [
                         '_token',
@@ -189,12 +225,6 @@ class GoogleAdsApiController extends Controller
                         'entriesPerPage'
                     ]
                 )
-            );
-
-            // Merges the list of metric fields to the resource ones that are selected by default.
-            $selectedFields = array_merge(
-                self::REPORT_TYPE_TO_DEFAULT_SELECTED_FIELDS[$reportType],
-                $selectedFields
             );
 
             // Builds the GAQL query.

@@ -33,6 +33,15 @@ class RefreshBenchmarksTest extends TestCase
             ->assertExitCode(0);
     }
 
+    public function testInvalidDateIsRejectedAndWritesNothing(): void
+    {
+        $original = file_get_contents(resource_path('knowledge/benchmarks.json'));
+
+        $this->artisan('benchmarks:refresh --date=garbage')->assertExitCode(1);
+
+        $this->assertSame($original, file_get_contents(resource_path('knowledge/benchmarks.json')));
+    }
+
     public function testInvalidSourceFailsAndWritesNothing(): void
     {
         $original = file_get_contents(resource_path('knowledge/benchmarks.json'));

@@ -44,6 +44,16 @@ class RefreshBenchmarks extends Command
 
     public function handle(): int
     {
+        // Validate the review date up front so a bad value can never be stamped.
+        $date = $this->option('date');
+        if ($date !== null) {
+            $parsed = \DateTime::createFromFormat('Y-m-d', $date);
+            if ($parsed === false || $parsed->format('Y-m-d') !== $date) {
+                $this->error("Invalid --date \"$date\"; expected YYYY-MM-DD.");
+                return self::FAILURE;
+            }
+        }
+
         $path = resource_path('knowledge/benchmarks.json');
         if (!is_file($path)) {
             $this->error("Benchmark dataset not found at: $path");
