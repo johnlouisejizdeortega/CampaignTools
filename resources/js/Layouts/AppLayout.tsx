@@ -212,10 +212,59 @@ function Sidebar({ navOpen }: { navOpen: boolean }) {
     );
 }
 
+// Slide-in navigation for small screens, where the desktop sidebar is hidden.
+function MobileNav({ open, onClose }: { open: boolean; onClose: () => void }) {
+    const isActive = useActiveFeature();
+    if (!open) return null;
+    return (
+        <div className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true">
+            <div className="absolute inset-0 bg-foreground/40" onClick={onClose} />
+            <nav className="absolute left-0 top-0 flex h-full w-72 max-w-[82%] flex-col bg-card shadow-xl">
+                <div className="flex items-center gap-2 border-b px-4 py-4">
+                    <GoogleAdsLogo className="h-7 w-7" />
+                    <span className="text-lg tracking-tight text-foreground">Google Ads</span>
+                </div>
+                <div className="overflow-y-auto p-2">
+                    {FEATURES.map((f) => {
+                        const active = isActive(f);
+                        return (
+                            <a
+                                key={f.id}
+                                href={f.href}
+                                onClick={onClose}
+                                className={`mb-0.5 flex items-start gap-3 rounded-lg px-3 py-2.5 ${
+                                    active ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-muted'
+                                }`}
+                            >
+                                <f.icon className="mt-0.5 h-5 w-5 shrink-0" />
+                                <span className="min-w-0">
+                                    <span className={`block text-sm ${active ? 'font-medium' : ''}`}>{f.label}</span>
+                                    <span className="block text-xs text-muted-foreground">{f.desc}</span>
+                                </span>
+                            </a>
+                        );
+                    })}
+                </div>
+            </nav>
+        </div>
+    );
+}
+
 export default function AppLayout({ title, subtitle, authenticated = true, children }: AppLayoutProps) {
     const page = usePage<SharedProps>();
     const flash = page.props.flash ?? {};
     const [navOpen, setNavOpen] = useState(true);
+    const [mobileOpen, setMobileOpen] = useState(false);
+
+    // The hamburger opens the mobile drawer on small screens and collapses the
+    // labelled nav panel on desktop (>= lg).
+    const toggleNav = () => {
+        if (typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches) {
+            setNavOpen((v) => !v);
+        } else {
+            setMobileOpen((v) => !v);
+        }
+    };
 
     // When arriving from another page at e.g. "/#report", scroll the target tool
     // into view once the Overview has mounted.
@@ -228,7 +277,8 @@ export default function AppLayout({ title, subtitle, authenticated = true, child
 
     return (
         <div className="min-h-screen bg-background">
-            <TopBar authenticated={authenticated} onToggleNav={() => setNavOpen((v) => !v)} />
+            <TopBar authenticated={authenticated} onToggleNav={toggleNav} />
+            <MobileNav open={mobileOpen} onClose={() => setMobileOpen(false)} />
             <div className="flex">
                 <Sidebar navOpen={navOpen} />
                 <main className="min-w-0 flex-1">
