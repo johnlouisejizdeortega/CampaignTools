@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import GoogleAdsLogo from '@/components/GoogleAdsLogo';
 
 export default function Login() {
     const { data, setData, post, processing, errors } = useForm({ password: '' });
@@ -25,9 +26,7 @@ export default function Login() {
             />
             <div className="relative w-full max-w-sm">
                 <div className="mb-6 flex items-center justify-center gap-2.5 font-semibold tracking-tight">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-[0.7rem] font-bold text-primary-foreground">
-                        Ads
-                    </span>
+                    <GoogleAdsLogo className="h-8 w-8" />
                     <span>Google Ads Dashboard</span>
                 </div>
                 <Card className="shadow-lg">

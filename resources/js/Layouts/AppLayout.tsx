@@ -4,6 +4,7 @@ import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import ThemeToggle from '@/components/ThemeToggle';
+import GoogleAdsLogo from '@/components/GoogleAdsLogo';
 import type { SharedProps } from '@/types';
 
 interface AppLayoutProps {
@@ -20,9 +21,7 @@ export default function AppLayout({ title, subtitle, authenticated = true, child
             <header className="sticky top-0 z-20 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                 <div className="container flex h-16 items-center justify-between">
                     <Link href="/" className="flex items-center gap-2.5 font-semibold tracking-tight">
-                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-[0.65rem] font-bold text-primary-foreground">
-                            Ads
-                        </span>
+                        <GoogleAdsLogo className="h-7 w-7" />
                         <span>Google Ads Dashboard</span>
                     </Link>
                     <div className="flex items-center gap-1">
