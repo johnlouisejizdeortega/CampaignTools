@@ -363,11 +363,11 @@ export default function Dashboard({ overview = null }: { overview?: OverviewData
                 <Plus className="h-4 w-4 text-muted-foreground" />
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Tools</h2>
             </div>
-            <div className="grid gap-5 md:grid-cols-2" id="campaigns">
-                <div id="report"><ShowReportForm /></div>
-                <PauseCampaignForm />
+            <div className="grid gap-5 md:grid-cols-2">
+                <div id="report" className="scroll-mt-24"><ShowReportForm /></div>
+                <div id="campaigns" className="scroll-mt-24"><PauseCampaignForm /></div>
             </div>
-            <div className="mt-5" id="optimization"><OptimizationPanel /></div>
+            <div className="mt-5 scroll-mt-24" id="optimization"><OptimizationPanel /></div>
         </AppLayout>
     );
 }
