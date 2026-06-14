@@ -108,8 +108,11 @@ function Benchmark({ benchmark }: { benchmark: BenchmarkType | null }) {
                         </TableBody>
                     </Table>
                 </div>
+                {benchmark.note && (
+                    <p className="mt-3 text-xs text-muted-foreground">{benchmark.note}</p>
+                )}
                 {benchmark.source && (
-                    <p className="mt-3 text-xs text-muted-foreground">
+                    <p className="mt-2 text-xs text-muted-foreground">
                         Source:{' '}
                         <a href={benchmark.source.url} target="_blank" rel="noreferrer" className="underline-offset-4 hover:underline">
                             {benchmark.source.label}

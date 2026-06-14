@@ -1,18 +1,37 @@
 // Industry-specific optimization tactics shown on the optimization page when the
 // matching industry is selected. Keyed to the benchmark industry names in
 // resources/knowledge/benchmarks.json. Each tip is a well-established Google Ads
-// best practice applied to the vertical — no AI-generated content.
+// best practice applied to the vertical, citing an official Google source — no
+// AI-generated advice. Ordered roughly by impact, foundations first.
 import type { PlaybookTip } from '@/types';
 
 export const verticalTips: Record<string, PlaybookTip[]> = {
     'Heating & Boilers (UK)': [
         {
+            badge: { variant: 'destructive', label: 'Do this first' },
+            title: 'Track calls and form leads as conversions',
+            problem:
+                'Boiler enquiries come by phone as much as by form. If calls and quote requests aren\'t tracked as conversions, Smart Bidding optimises blind and you can\'t tell which keywords actually book work.',
+            fix: 'Set up conversion tracking for form submissions and phone calls (call-from-ads and calls to a tracked number on the site), then mark the lead actions as primary conversions before scaling spend.',
+            source: { label: 'Google Ads Help — About conversion tracking', url: 'https://support.google.com/google-ads/answer/1722022' },
+            reviewed: '2026-06-14',
+        },
+        {
             badge: { variant: 'warning', label: 'Intent' },
             title: 'Separate "emergency repair" from "new installation"',
             problem:
                 'Someone searching "boiler not working" needs an engineer today; someone searching "new boiler cost" is comparing quotes. One ad group for both wastes budget and lowers relevance.',
-            fix: 'Build distinct campaigns/ad groups: an urgent "repair/emergency" set (call-focused, broad hours) and a "new boiler/replacement" set (quote- and finance-focused).',
+            fix: 'Build distinct campaigns/ad groups: an urgent "repair/emergency" set (call-focused, broad hours, higher bids) and a "new boiler/replacement" set (quote- and finance-focused).',
             source: { label: 'Google Ads Help — Structure your account', url: 'https://support.google.com/google-ads/answer/6372655' },
+            reviewed: '2026-06-14',
+        },
+        {
+            badge: { variant: 'info', label: 'High value' },
+            title: 'Use Local Services Ads & get Google Guaranteed',
+            problem:
+                'Search ads alone miss the pay-per-lead, top-of-page slot many homeowners click first — and you\'re not carrying the green "Google Guaranteed" trust badge that competitors have.',
+            fix: 'Apply for Local Services Ads as a heating/boiler business, complete the Google Guaranteed checks (licence, insurance, background), and run LSA alongside Search so you pay per lead and show the badge.',
+            source: { label: 'Google — About Local Services Ads', url: 'https://support.google.com/localservices/answer/6224841' },
             reviewed: '2026-06-14',
         },
         {
@@ -29,7 +48,7 @@ export const verticalTips: Record<string, PlaybookTip[]> = {
             title: 'Put Gas Safe & accreditations in the ad',
             problem:
                 'Boiler buyers worry about cowboys. Generic ads that don\'t signal trust convert worse on a high-value purchase.',
-            fix: 'Use callout assets and headlines for "Gas Safe registered", manufacturer-accredited installer, guarantees, and reviews (e.g. Which? Trusted Trader).',
+            fix: 'Use callout and structured-snippet assets plus headlines for "Gas Safe registered", manufacturer-accredited installer, guarantees, and review ratings (e.g. Which? Trusted Trader).',
             source: { label: 'Google Ads Help — About assets', url: 'https://support.google.com/google-ads/answer/7332837' },
             reviewed: '2026-06-14',
         },
@@ -38,7 +57,7 @@ export const verticalTips: Record<string, PlaybookTip[]> = {
             title: 'Lead with fixed-price quotes and finance',
             problem:
                 'A new boiler is a big-ticket purchase; ads and landing pages that bury price or finance lose people who would have booked a survey.',
-            fix: 'Promote a free fixed-price quote and spread-the-cost / 0% finance options in ad copy, and send clicks to a fast quote form rather than the homepage.',
+            fix: 'Promote a free fixed-price quote and spread-the-cost / 0% finance options in ad copy, and send clicks to a fast, mobile-friendly quote form rather than the homepage.',
             source: { label: 'Google Ads Help — About landing page experience', url: 'https://support.google.com/google-ads/answer/6167130' },
             reviewed: '2026-06-14',
         },
