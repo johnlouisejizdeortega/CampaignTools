@@ -24,12 +24,13 @@ RUN npm run build
 # A self-contained image that serves the Google Ads Team Dashboard.
 FROM php:8.3-apache
 
-# System packages and PHP extensions the app needs (bcmath is used by the
-# Google Ads library; zip speeds up Composer installs). gRPC is intentionally
-# omitted — the library falls back to the REST transport.
+# System packages and PHP extensions the app needs. Laravel requires mbstring
+# (not bundled in the base image; needs libonig-dev); bcmath is used by the
+# Google Ads library and zip speeds up Composer. gRPC is intentionally omitted —
+# the library falls back to the REST transport.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git unzip libzip-dev curl \
-    && docker-php-ext-install bcmath zip \
+    && apt-get install -y --no-install-recommends git unzip libzip-dev libonig-dev curl \
+    && docker-php-ext-install bcmath zip mbstring \
     && a2enmod rewrite \
     && rm -rf /var/lib/apt/lists/*
 
