@@ -13,7 +13,13 @@
         "Education & Instruction": { "avgCtr": 0.0641, "avgCpc": 2.34, "avgCvr": 0.078, "avgCpa": 49.06 },
         "Finance & Insurance": { "avgCtr": 0.0612, "avgCpc": 3.85, "avgCvr": 0.058, "avgCpa": 66.34 },
         "Health & Fitness": { "avgCtr": 0.0658, "avgCpc": 2.62, "avgCvr": 0.078, "avgCpa": 40.74 },
-        "Heating & Boilers (UK)": { "avgCtr": 0.058, "avgCpc": 3.5, "avgCvr": 0.08, "avgCpa": 45.0, "currency": "GBP" },
+        "Heating & Boilers (UK)": {
+            "avgCtr": 0.058, "avgCpc": 3.5, "avgCvr": 0.08, "avgCpa": 45.0,
+            "currency": "GBP",
+            "source": { "label": "WordStream/LocaliQ — Home & Home Improvement (Search), converted to GBP", "url": "https://localiq.com/blog/search-advertising-benchmarks/" },
+            "reviewed": "2026-06-14",
+            "note": "Directional UK home/trade-services figures — boilers sit under home services. Costs are illustrative GBP conversions, so treat them as a sanity check, not a target."
+        },
         "Home & Home Improvement": { "avgCtr": 0.0489, "avgCpc": 4.18, "avgCvr": 0.053, "avgCpa": 75.20 },
         "Industrial & Commercial": { "avgCtr": 0.0623, "avgCpc": 2.93, "avgCvr": 0.054, "avgCpa": 54.32 },
         "Legal": { "avgCtr": 0.0492, "avgCpc": 6.75, "avgCvr": 0.057, "avgCpa": 101.40 },

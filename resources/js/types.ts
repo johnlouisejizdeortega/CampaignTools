@@ -50,6 +50,7 @@ export interface Benchmark {
     currency: string;
     source: Source | null;
     reviewed: string | null;
+    note?: string | null;
     metrics: BenchmarkMetric[];
 }
 

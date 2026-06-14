@@ -496,8 +496,9 @@ class GoogleAdsApiController extends Controller
         return [
             'industry' => $industry,
             'currency' => $b['currency'] ?? $data['currency'] ?? 'USD',
-            'source' => $data['source'] ?? null,
-            'reviewed' => $data['reviewed'] ?? null,
+            'source' => $b['source'] ?? $data['source'] ?? null,
+            'reviewed' => $b['reviewed'] ?? $data['reviewed'] ?? null,
+            'note' => $b['note'] ?? null,
             'metrics' => [
                 ['label' => 'CTR', 'account' => $account['ctr'] ?? null, 'benchmark' => $b['avgCtr'], 'format' => 'percent', 'betterWhenHigher' => true],
                 ['label' => 'Avg. CPC', 'account' => $account['cpc'] ?? null, 'benchmark' => $b['avgCpc'], 'format' => 'currency', 'betterWhenHigher' => false],
