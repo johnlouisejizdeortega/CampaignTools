@@ -22,6 +22,7 @@ use App\Optimization\AccountSignalsFetcher;
 use App\Optimization\OptimizationAnalyzer;
 use App\Support\AuditLogger;
 use Google\Ads\GoogleAds\Lib\V24\GoogleAdsClient;
+use Google\Ads\GoogleAds\Lib\OAuth2TokenBuilder;
 use Google\Ads\GoogleAds\Util\FieldMasks;
 use Google\Ads\GoogleAds\Util\V24\ResourceNames;
 use Google\Ads\GoogleAds\V24\Enums\CampaignStatusEnum\CampaignStatus;
@@ -368,6 +369,48 @@ class GoogleAdsApiController extends Controller
      * daily series for the chart; otherwise it shows the "connect an account"
      * state. The page always renders (tools below the fold stay usable).
      */
+    /**
+     * Temporary diagnostic (behind team auth): reports the *lengths* of the
+     * configured Google Ads credentials (never the values) and whether the
+     * server can exchange the refresh token for an access token. Used to pin
+     * down "UNAUTHENTICATED" issues without exposing secrets.
+     */
+    public function googleAdsDiagnostic(): \Illuminate\Http\JsonResponse
+    {
+        $report = [
+            'lengths' => [
+                'developer_token' => strlen((string) config('google_ads.developer_token')),
+                'client_id' => strlen((string) config('google_ads.oauth2.client_id')),
+                'client_secret' => strlen((string) config('google_ads.oauth2.client_secret')),
+                'refresh_token' => strlen((string) config('google_ads.oauth2.refresh_token')),
+            ],
+            'expected_lengths' => [
+                'developer_token' => 22,
+                'client_id' => 72,
+                'client_secret' => 35,
+                'refresh_token' => 103,
+            ],
+            'login_customer_id' => (string) config('google_ads.login_customer_id'),
+            'config_cached' => app()->configurationIsCached(),
+        ];
+
+        try {
+            $credential = (new OAuth2TokenBuilder())
+                ->withClientId(config('google_ads.oauth2.client_id'))
+                ->withClientSecret(config('google_ads.oauth2.client_secret'))
+                ->withRefreshToken(config('google_ads.oauth2.refresh_token'))
+                ->build();
+            $token = $credential->fetchAuthToken();
+            $report['token_fetch'] = (is_array($token) && !empty($token['access_token']))
+                ? 'SUCCESS: server obtained an access token'
+                : ('NO ACCESS TOKEN returned: ' . json_encode($token));
+        } catch (Throwable $e) {
+            $report['token_fetch'] = 'ERROR: ' . $e->getMessage();
+        }
+
+        return response()->json($report);
+    }
+
     public function overviewAction(Request $request): InertiaResponse
     {
         $customerId = (string) $request->query('customerId', '');
