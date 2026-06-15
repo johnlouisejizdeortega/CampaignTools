@@ -48,6 +48,11 @@ class AppServiceProvider extends ServiceProvider
 
                 $clientBuilder = (new GoogleAdsClientBuilder())
                     ->withDeveloperToken($developerToken)
+                    // Use the REST transport. On some managed hosts the gRPC
+                    // call-credentials plugin fails to attach the OAuth access
+                    // token, causing UNAUTHENTICATED errors even though the token
+                    // is valid; REST sends it as a standard Authorization header.
+                    ->withTransport('rest')
                     ->withOAuth2Credential($oAuth2Credential);
 
                 if (!empty(config('google_ads.login_customer_id'))) {
