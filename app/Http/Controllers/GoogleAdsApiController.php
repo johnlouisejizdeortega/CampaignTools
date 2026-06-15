@@ -375,7 +375,7 @@ class GoogleAdsApiController extends Controller
      * server can exchange the refresh token for an access token. Used to pin
      * down "UNAUTHENTICATED" issues without exposing secrets.
      */
-    public function googleAdsDiagnostic(): \Illuminate\Http\JsonResponse
+    public function googleAdsDiagnostic(Request $request): \Illuminate\Http\JsonResponse
     {
         $report = [
             'lengths' => [
@@ -406,6 +406,29 @@ class GoogleAdsApiController extends Controller
                 : ('NO ACCESS TOKEN returned: ' . json_encode($token));
         } catch (Throwable $e) {
             $report['token_fetch'] = 'ERROR: ' . $e->getMessage();
+        }
+
+        // Live end-to-end API call through the bound client (same path the
+        // Overview uses), so we can see the full, untruncated error and confirm
+        // whether the REST transport is in effect. Add ?customerId=##########.
+        $cid = preg_replace('/\D/', '', (string) $request->query('customerId', ''));
+        if (strlen((string) $cid) === 10) {
+            try {
+                $client = app(GoogleAdsClient::class);
+                $resp = $client->getGoogleAdsServiceClient()->search(
+                    SearchGoogleAdsRequest::build($cid, 'SELECT customer.id, customer.descriptive_name, customer.currency_code FROM customer LIMIT 1')
+                );
+                $out = [];
+                foreach ($resp->iterateAllElements() as $row) {
+                    $c = $row->getCustomer();
+                    $out[] = ['id' => $c->getId(), 'name' => $c->getDescriptiveName(), 'currency' => $c->getCurrencyCode()];
+                }
+                $report['api_call'] = ['result' => 'SUCCESS', 'rows' => $out];
+            } catch (Throwable $e) {
+                $report['api_call'] = ['result' => 'ERROR', 'message' => $e->getMessage()];
+            }
+        } else {
+            $report['api_call'] = 'skipped — add ?customerId=1468333005 to run a live call';
         }
 
         return response()->json($report);
