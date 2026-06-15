@@ -31,6 +31,8 @@ Route::post('logout', 'TeamAccessController@logout')->name('logout');
 // is configured (see App\Http\Middleware\TeamAuthenticate).
 Route::middleware('team.auth')->group(function () {
     Route::get('/', 'GoogleAdsApiController@overviewAction');
+    // Temporary credential diagnostic (no secrets exposed) — remove once resolved.
+    Route::get('diag/google-ads', 'GoogleAdsApiController@googleAdsDiagnostic');
     Route::post(
         'pause-campaign',
         'GoogleAdsApiController@pauseCampaignAction'
