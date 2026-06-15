@@ -377,63 +377,95 @@ class GoogleAdsApiController extends Controller
             // Invalid IDs short-circuit to a friendly error rather than an API call.
             if (!preg_match('/^\d{10}$/', $customerId)) {
                 $overview = ['customerId' => $customerId, 'error' => 'Enter a 10-digit Customer ID without dashes.'];
-            } else {
-                try {
-                    // Resolve the client lazily so the empty Overview never depends
-                    // on Google Ads credentials being present.
-                    $googleAdsClient = app(GoogleAdsClient::class);
-                    $service = $googleAdsClient->getGoogleAdsServiceClient();
 
-                    // Real aggregate metrics + optimization score for the account.
-                    $signals = (new AccountSignalsFetcher($googleAdsClient))->fetch($customerId);
-                    $account = $signals['account'] ?? [];
-
-                    // Account currency (falls back to USD if not returned).
-                    $currency = 'USD';
-                    $curResp = $service->search(SearchGoogleAdsRequest::build(
-                        $customerId,
-                        'SELECT customer.currency_code FROM customer LIMIT 1'
-                    ));
-                    foreach ($curResp->iterateAllElements() as $row) {
-                        $currency = $row->getCustomer()->getCurrencyCode() ?: 'USD';
-                    }
-
-                    // Daily series for the Clicks/Impressions chart.
-                    $series = [];
-                    $seriesResp = $service->search(SearchGoogleAdsRequest::build(
-                        $customerId,
-                        'SELECT segments.date, metrics.clicks, metrics.impressions, '
-                        . 'metrics.cost_micros FROM customer '
-                        . 'WHERE segments.date DURING LAST_30_DAYS ORDER BY segments.date'
-                    ));
-                    foreach ($seriesResp->iterateAllElements() as $row) {
-                        $m = $row->getMetrics();
-                        $series[] = [
-                            'date' => date('M j', strtotime($row->getSegments()->getDate())),
-                            'clicks' => (float) $m->getClicks(),
-                            'impressions' => (float) $m->getImpressions(),
-                            'cost' => $m->getCostMicros() / 1_000_000,
-                        ];
-                    }
-
-                    $overview = [
-                        'customerId' => $customerId,
-                        'currency' => $currency,
-                        'totals' => [
-                            'clicks' => (float) ($account['clicks'] ?? 0),
-                            'impressions' => (float) ($account['impressions'] ?? 0),
-                            'cost' => (float) ($account['cost'] ?? 0),
-                            'avgCpc' => (float) ($account['cpc'] ?? 0),
-                            'conversions' => (float) ($account['conversions'] ?? 0),
-                        ],
-                        'optimizationScore' => $signals['optimizationScore'] ?? null,
-                        'series' => $series,
-                        'error' => null,
-                    ];
-                } catch (Throwable $e) {
-                    $overview = ['customerId' => $customerId, 'error' => $this->friendlyApiError($e)];
-                }
+                return Inertia::render('Dashboard', ['overview' => $overview]);
             }
+
+            // Building the client is the only step that depends on credentials
+            // being configured; if it fails the account genuinely can't load.
+            try {
+                $googleAdsClient = app(GoogleAdsClient::class);
+                $service = $googleAdsClient->getGoogleAdsServiceClient();
+            } catch (Throwable $e) {
+                return Inertia::render('Dashboard', [
+                    'overview' => ['customerId' => $customerId, 'error' => $this->friendlyApiError($e)],
+                ]);
+            }
+
+            $currency = 'USD';
+            $totals = ['clicks' => 0.0, 'impressions' => 0.0, 'cost' => 0.0, 'avgCpc' => 0.0, 'conversions' => 0.0];
+            $series = [];
+            $optimizationScore = null;
+            $gotTotals = false;
+            $errors = [];
+
+            // Account currency + 30-day totals (one aggregated row). Each query is
+            // isolated so a failure in one never blanks out the whole Overview.
+            try {
+                $resp = $service->search(SearchGoogleAdsRequest::build(
+                    $customerId,
+                    'SELECT customer.currency_code, metrics.clicks, metrics.impressions, '
+                    . 'metrics.cost_micros, metrics.average_cpc, metrics.conversions '
+                    . 'FROM customer WHERE segments.date DURING LAST_30_DAYS'
+                ));
+                foreach ($resp->iterateAllElements() as $row) {
+                    $m = $row->getMetrics();
+                    $currency = $row->getCustomer()->getCurrencyCode() ?: 'USD';
+                    $totals = [
+                        'clicks' => (float) $m->getClicks(),
+                        'impressions' => (float) $m->getImpressions(),
+                        'cost' => $m->getCostMicros() / 1_000_000,
+                        'avgCpc' => $m->getAverageCpc() / 1_000_000,
+                        'conversions' => (float) $m->getConversions(),
+                    ];
+                    $gotTotals = true;
+                }
+            } catch (Throwable $e) {
+                $errors[] = 'metrics: ' . $e->getMessage();
+            }
+
+            // Daily series for the Clicks/Impressions chart.
+            try {
+                $resp = $service->search(SearchGoogleAdsRequest::build(
+                    $customerId,
+                    'SELECT segments.date, metrics.clicks, metrics.impressions, '
+                    . 'metrics.cost_micros FROM customer '
+                    . 'WHERE segments.date DURING LAST_30_DAYS ORDER BY segments.date'
+                ));
+                foreach ($resp->iterateAllElements() as $row) {
+                    $m = $row->getMetrics();
+                    $series[] = [
+                        'date' => date('M j', strtotime($row->getSegments()->getDate())),
+                        'clicks' => (float) $m->getClicks(),
+                        'impressions' => (float) $m->getImpressions(),
+                        'cost' => $m->getCostMicros() / 1_000_000,
+                    ];
+                }
+            } catch (Throwable $e) {
+                $errors[] = 'series: ' . $e->getMessage();
+            }
+
+            // Optimization score (best-effort; never fatal to the page).
+            try {
+                $signals = (new AccountSignalsFetcher($googleAdsClient))->fetch($customerId);
+                $optimizationScore = $signals['optimizationScore'] ?? null;
+            } catch (Throwable $e) {
+                // Leave the score null.
+            }
+
+            $overview = [
+                'customerId' => $customerId,
+                'currency' => $currency,
+                'totals' => $totals,
+                'optimizationScore' => $optimizationScore,
+                'series' => $series,
+                // Only surface an error if we couldn't get the headline metrics at
+                // all; include the raw API detail so the cause is diagnosable.
+                'error' => $gotTotals
+                    ? null
+                    : ('Connected, but no metrics were returned for this account.'
+                        . ($errors ? ' Details: ' . implode(' | ', $errors) : '')),
+            ];
         }
 
         return Inertia::render('Dashboard', ['overview' => $overview]);

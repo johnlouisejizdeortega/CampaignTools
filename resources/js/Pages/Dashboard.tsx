@@ -130,7 +130,7 @@ function ConnectAccount({ error }: { error?: string | null }) {
                     />
                     <Button type="submit">View overview</Button>
                 </form>
-                {error && <p className="mt-2 text-xs text-destructive">Couldn't load that account: {String(error).slice(0, 160)}</p>}
+                {error && <p className="mt-2 break-words text-xs text-destructive">Couldn't load that account: {String(error).slice(0, 600)}</p>}
             </CardContent>
         </Card>
     );
