@@ -263,93 +263,50 @@ class GoogleAdsApiController extends Controller
         }
 
         try {
-        // Resolves the API client only after validation has passed, so invalid
-        // input is rejected without ever building a (credential-dependent) client.
-        $googleAdsClient = app(GoogleAdsClient::class);
+            // Resolves the API client only after validation has passed, so invalid
+            // input is rejected without ever building a (credential-dependent) client.
+            $googleAdsClient = app(GoogleAdsClient::class);
 
-        // Determines the number of the page to load (the first one by default).
-        $pageNo = $request->input('page') ?: 1;
+            $pageNo = max(1, (int) ($request->input('page') ?: 1));
 
-        // Page number of the Google Ads API result is not the same as the requested UI page number.
-        // This is because Google Ads API has a defined default page size and users cannot specify
-        // it.
-        $resultPageNo = intval($entriesPerPage * $pageNo / self::DEFAULT_PAGE_SIZE);
-        // Fetches next pages in sequence and stores their page tokens until the page token of the
-        // requested page is retrieved.
-        while (count($pageTokens) < $resultPageNo) {
-            // Fetches the next unknown page.
+            // The query already caps results with a LIMIT clause, so fetching all
+            // matching rows (the client auto-paginates) is bounded. This lets us
+            // page through them in the UI without a server-side total-count call,
+            // which isn't available on this transport/library.
+            $rows = [];
             $response = $googleAdsClient->getGoogleAdsServiceClient()->search(
                 SearchGoogleAdsRequest::build($customerId, $query)
-                    // Requests to return the total results count. This is necessary to
-                    // determine how many pages of results exist.
-                    ->setReturnTotalResultsCount(true)
-                    // There is no need to go over the pages we already know the page tokens for.
-                    // Fetches the last page we know the page token for so that we can retrieve the
-                    // token of the page that comes after it.
-                    ->setPageToken(end($pageTokens))
             );
-            if ($response->getPage()->hasNextPage()) {
-                // Stores the page token of the page that comes after the one we just fetched if
-                // any so that it can be reused later if necessary.
-                $pageTokens[] = $response->getPage()->getNextPageToken();
-            } else {
-                // Otherwise changes the requested page number for the latest page that we have
-                // fetched until now, the requested page number was invalid.
-                $resultPageNo = count($pageTokens);
-            }
-        }
-
-        // Fetches the actual page that we want to display the results of.
-        $response = $googleAdsClient->getGoogleAdsServiceClient()->search(
-            SearchGoogleAdsRequest::build($customerId, $query)
-                // Requests to return the total results count. This is necessary to
-                // determine how many pages of results exist.
-                ->setReturnTotalResultsCount(true)
-                // The page token of the requested page is in the page token list because of the
-                // processing done in the previous loop.
-                ->setPageToken($pageTokens[$resultPageNo])
-        );
-
-        // Determines the total number of results to display.
-        // The total results count does not take into consideration the LIMIT clause of the query
-        // so we need to find the minimal value between the limit and the total results count.
-        $totalNumberOfResults = min(
-            self::RESULTS_LIMIT,
-            $response->getPage()->getResponseObject()->getTotalResultsCount()
-        );
-
-        // Extracts the specific subset of the results for the requested page.
-        $results = [];
-        $startIndex = ($pageNo - 1) * $entriesPerPage;
-        foreach ($response->getPage()->getIterator() as $index => $googleAdsRow) {
-            if ($index >= $startIndex) {
+            foreach ($response->iterateAllElements() as $googleAdsRow) {
                 /** @var GoogleAdsRow $googleAdsRow */
-                // Converts each result as a Plain Old PHP Object (POPO) using JSON.
-                $results[] = json_decode($googleAdsRow->serializeToJsonString(), true);
+                // Converts each result to a Plain Old PHP Object (POPO) via JSON.
+                $rows[] = json_decode($googleAdsRow->serializeToJsonString(), true);
+                if (count($rows) >= self::RESULTS_LIMIT) {
+                    break;
+                }
             }
-            if (count($results) >= $entriesPerPage) {
-                break;
-            }
-        }
 
-        // Creates a length aware paginator to supply a given page of results for the view.
-        $paginatedResults = new LengthAwarePaginator(
-            $results,
-            $totalNumberOfResults,
-            $entriesPerPage,
-            $pageNo,
-            ['path' => url('show-report')]
-        );
+            // Extracts the subset of results for the requested UI page.
+            $pageResults = array_slice(
+                $rows,
+                ($pageNo - 1) * (int) $entriesPerPage,
+                (int) $entriesPerPage
+            );
 
-        // Updates the session with the known page tokens to avoid unnecessary requests during
-        // future page navigation.
-        $request->session()->put('pageTokens', $pageTokens);
+            // Creates a length aware paginator to supply the page of results.
+            $paginatedResults = new LengthAwarePaginator(
+                $pageResults,
+                count($rows),
+                (int) $entriesPerPage,
+                $pageNo,
+                ['path' => url('show-report')]
+            );
 
-        // Renders the page that displays fields of paginated report results.
-        return Inertia::render('ReportResult', [
-            'results' => $paginatedResults,
-            'selectedFields' => $selectedFields,
-        ]);
+            // Renders the page that displays fields of paginated report results.
+            return Inertia::render('ReportResult', [
+                'results' => $paginatedResults,
+                'selectedFields' => $selectedFields,
+            ]);
         } catch (Throwable $e) {
             return back()->with('error', $this->friendlyApiError($e));
         }
