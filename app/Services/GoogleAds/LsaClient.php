@@ -5,7 +5,9 @@ namespace App\Services\GoogleAds;
 use Google\Ads\GoogleAds\Lib\V24\GoogleAdsClient;
 use Google\Ads\GoogleAds\Util\V24\ResourceNames;
 use Google\Ads\GoogleAds\V24\Enums\LocalServicesLeadSurveyAnswerEnum\SurveyAnswer;
+use Google\Ads\GoogleAds\V24\Enums\LocalServicesLeadSurveyDissatisfiedReasonEnum\SurveyDissatisfiedReason;
 use Google\Ads\GoogleAds\V24\Services\ProvideLeadFeedbackRequest;
+use Google\Ads\GoogleAds\V24\Services\SurveyDissatisfied;
 use Google\Ads\GoogleAds\V24\Services\SearchGoogleAdsRequest;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -189,11 +191,27 @@ class LsaClient
      * permits. $surveyAnswer is one of the SurveyAnswer enum names, e.g.
      * VERY_SATISFIED, SATISFIED, NEUTRAL, DISSATISFIED, VERY_DISSATISFIED.
      */
-    public function provideLeadFeedback(string $customerId, string $leadId, string $surveyAnswer): void
-    {
+    public function provideLeadFeedback(
+        string $customerId,
+        string $leadId,
+        string $surveyAnswer,
+        ?string $dissatisfiedReason = null,
+        ?string $comment = null
+    ): void {
         $request = new ProvideLeadFeedbackRequest();
         $request->setResourceName(ResourceNames::forLocalServicesLead($customerId, $leadId));
         $request->setSurveyAnswer(SurveyAnswer::value($surveyAnswer));
+
+        // When reporting a bad lead, attach the dissatisfaction reason Google
+        // reviews for a possible credit (spam/duplicate/geo mismatch, etc.).
+        if ($dissatisfiedReason !== null) {
+            $detail = new SurveyDissatisfied();
+            $detail->setSurveyDissatisfiedReason(SurveyDissatisfiedReason::value($dissatisfiedReason));
+            if ($comment !== null && $comment !== '') {
+                $detail->setOtherReasonComment($comment);
+            }
+            $request->setSurveyDissatisfied($detail);
+        }
 
         $this->client->getLocalServicesLeadServiceClient()->provideLeadFeedback($request);
     }

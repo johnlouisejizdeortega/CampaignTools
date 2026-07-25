@@ -151,12 +151,25 @@ class LsaLeadController extends Controller
     {
         $validated = $request->validate([
             'survey_answer' => ['required', 'in:VERY_SATISFIED,SATISFIED,NEUTRAL,DISSATISFIED,VERY_DISSATISFIED'],
+            'reason' => ['nullable', 'in:SPAM,DUPLICATE,GEO_MISMATCH,JOB_TYPE_MISMATCH,NOT_READY_TO_BOOK,SOLICITATION,OTHER_DISSATISFIED_REASON'],
+            'comment' => ['nullable', 'string', 'max:1000'],
         ]);
 
         $lead = LsaLead::findOrFail($id);
 
         try {
-            $client->provideLeadFeedback($lead->customer_id, $lead->id, $validated['survey_answer']);
+            $client->provideLeadFeedback(
+                $lead->customer_id,
+                $lead->id,
+                $validated['survey_answer'],
+                $validated['reason'] ?? null,
+                $validated['comment'] ?? null,
+            );
+
+            $lead->update([
+                'feedback_submitted' => true,
+                'feedback_reason' => $validated['reason'] ?? $validated['survey_answer'],
+            ]);
 
             return response()->json(['status' => 'ok']);
         } catch (Throwable $e) {
