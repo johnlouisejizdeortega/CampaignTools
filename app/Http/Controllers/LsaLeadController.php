@@ -52,7 +52,9 @@ class LsaLeadController extends Controller
     public function accounts(): JsonResponse
     {
         $leadAgg = LsaLead::query()
-            ->selectRaw('customer_id, COUNT(*) as total_leads, SUM(charged) as charged_leads, MAX(created_at_google) as last_lead_at')
+            // CASE (not SUM(charged)) so it works on PostgreSQL, where a boolean
+            // can't be summed directly.
+            ->selectRaw('customer_id, COUNT(*) as total_leads, SUM(CASE WHEN charged THEN 1 ELSE 0 END) as charged_leads, MAX(created_at_google) as last_lead_at')
             ->groupBy('customer_id')
             ->get()
             ->keyBy('customer_id');
