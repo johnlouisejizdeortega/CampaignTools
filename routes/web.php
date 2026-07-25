@@ -47,7 +47,8 @@ Route::middleware('team.auth')->group(function () {
         'GoogleAdsApiController@showRecommendationsAction'
     );
 
-    // LSA lead dashboard — fast JSON API served entirely from the local DB.
+    // LSA lead dashboard — the React inbox page + fast JSON API (local DB only).
+    Route::get('leads', fn () => \Inertia\Inertia::render('Leads'));
     Route::get('api/leads', 'LsaLeadController@index');
     Route::get('api/leads/{id}', 'LsaLeadController@show');
     Route::get('api/stats', 'LsaLeadController@stats');

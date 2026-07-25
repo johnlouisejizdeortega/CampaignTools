@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import type { ComponentType, MouseEvent as ReactMouseEvent, ReactNode } from 'react';
 import {
-    BarChart3, Bell, ChevronDown, HelpCircle, LayoutGrid, Lightbulb,
+    BarChart3, Bell, ChevronDown, HelpCircle, Inbox, LayoutGrid, Lightbulb,
     Megaphone, Menu, Plus, RefreshCw, Search,
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -34,11 +34,13 @@ const FEATURES: Feature[] = [
     { id: 'report', icon: BarChart3, label: 'Reports', short: 'Reports', desc: 'Pull live performance data', href: '/#report' },
     { id: 'campaigns', icon: Megaphone, label: 'Campaigns', short: 'Campaigns', desc: 'Pause a live campaign', href: '/#campaigns' },
     { id: 'optimization', icon: Lightbulb, label: 'Recommendations', short: 'Optimize', desc: 'Optimization suggestions', href: '/#optimization' },
+    { id: 'leads', icon: Inbox, label: 'LSA Leads', short: 'Leads', desc: 'Local Services Ads inbox', href: '/leads' },
 ];
 const RESULT_PATH: Record<string, string> = {
     report: '/show-report',
     campaigns: '/pause-campaign',
     optimization: '/recommendations',
+    leads: '/leads',
 };
 
 // Formats a 10-digit Customer ID the way Google does: 123-456-7890.
