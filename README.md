@@ -50,3 +50,37 @@ the Google Ads API Client Library for PHP.
     license](https://opensource.org/licenses/MIT).
 *   The Google Ads API PHP client library is open-sourced under the [Apache License
     2.0](https://github.com/googleads/google-ads-php/blob/master/LICENSE).
+
+## Local Services Ads (LSA) lead dashboard
+
+A lightweight, DB-backed view of Google **Local Services Ads** leads that bypasses
+Google's slow LSA web dashboard. LSA data is pulled from the main Google Ads API
+(the read-only `local_services_lead` resources, which work for UK accounts — the
+standalone Local Services API is US/Canada-only). A scheduled job syncs into
+MySQL; the UI reads only from the DB, so pages load instantly.
+
+**Backend (implemented):**
+
+1. **Configure** the accounts to sync (in addition to the existing
+   `GOOGLE_ADS_*` credentials):
+   ```env
+   LSA_CLIENT_CUSTOMER_IDS=1468333005,9987020611   # 10 digits, no dashes
+   LSA_SYNC_WINDOW_DAYS=35
+   ```
+   Each ID must run an active Local Services campaign.
+2. **Migrate:** `php artisan migrate` (creates `lsa_leads`,
+   `lsa_lead_conversations`, `lsa_daily_costs`, `lsa_sync_log`).
+3. **First sync:** `php artisan lsa:sync` (or `--customer=1468333005` for one
+   account). Scheduled automatically every 15 minutes.
+4. **JSON API** (served entirely from the DB, behind the team-password gate):
+   - `GET /api/leads` — paginated, filter by `customer_id`, `lead_status`,
+     `charged`, `from`, `to`.
+   - `GET /api/leads/{id}` — a lead with its conversation thread.
+   - `GET /api/stats` — totals, charged count, spend, avg cost/lead, per-status.
+   - `POST /api/leads/{id}/feedback` — the only write; proxies
+     `ProvideLeadFeedback` (`survey_answer`: `VERY_SATISFIED`…`VERY_DISSATISFIED`).
+
+Notes: the API exposes whether a lead was charged but not a per-lead amount, so
+spend is derived from the LSA campaign's daily cost. LSA reporting can be ~30 min
+stale on Google's side, hence the 15-minute cadence. The React inbox UI is the
+next step.
