@@ -162,7 +162,10 @@ function LeadDrawer({ id, onClose }: { id: string; onClose: () => void }) {
 /* -------------------------------- Page ----------------------------------- */
 
 export default function Leads() {
-    const [filters, setFilters] = useState<Filters>({ customer_id: '', lead_status: 'all', charged: 'all', from: '', to: '' });
+    const initialCustomer = typeof window !== 'undefined'
+        ? (new URLSearchParams(window.location.search).get('customer_id') ?? '')
+        : '';
+    const [filters, setFilters] = useState<Filters>({ customer_id: initialCustomer, lead_status: 'all', charged: 'all', from: '', to: '' });
     const [page, setPage] = useState(1);
     const [leads, setLeads] = useState<Paginated<LsaLead> | null>(null);
     const [stats, setStats] = useState<LsaStats | null>(null);

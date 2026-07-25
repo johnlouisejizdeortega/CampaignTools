@@ -46,7 +46,9 @@ Route::middleware('team.auth')->group(function () {
     );
 
     // LSA lead dashboard — the React inbox page + fast JSON API (local DB only).
+    Route::get('accounts', fn () => \Inertia\Inertia::render('Accounts'));
     Route::get('leads', fn () => \Inertia\Inertia::render('Leads'));
+    Route::get('api/accounts', 'LsaLeadController@accounts');
     Route::get('api/leads', 'LsaLeadController@index');
     Route::get('api/leads/{id}', 'LsaLeadController@show');
     Route::get('api/stats', 'LsaLeadController@stats');

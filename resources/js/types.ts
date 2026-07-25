@@ -138,3 +138,14 @@ export interface Paginated<T> {
     last_page: number;
     per_page: number;
 }
+
+export interface LsaAccountStat {
+    customer_id: string;
+    name: string | null;
+    currency: string;
+    total_leads: number;
+    charged_leads: number;
+    spend: number;
+    cost_per_lead: number;
+    last_lead_at: string | null;
+}

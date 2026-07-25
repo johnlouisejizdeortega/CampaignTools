@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\LsaAccount;
 use App\Models\LsaDailyCost;
 use App\Models\LsaLead;
 use App\Services\GoogleAds\LsaClient;
@@ -42,6 +43,53 @@ class LsaLeadController extends Controller
             ->orderByDesc('created_at_google');
 
         return response()->json($query->paginate($validated['per_page'] ?? 25));
+    }
+
+    /**
+     * Agency overview: one aggregate row per LSA account (leads, charged, spend,
+     * cost-per-lead, last lead), for every configured or synced account.
+     */
+    public function accounts(): JsonResponse
+    {
+        $leadAgg = LsaLead::query()
+            ->selectRaw('customer_id, COUNT(*) as total_leads, SUM(charged) as charged_leads, MAX(created_at_google) as last_lead_at')
+            ->groupBy('customer_id')
+            ->get()
+            ->keyBy('customer_id');
+
+        $costAgg = LsaDailyCost::query()
+            ->selectRaw('customer_id, SUM(cost) as spend')
+            ->groupBy('customer_id')
+            ->get()
+            ->keyBy('customer_id');
+
+        $accounts = LsaAccount::all()->keyBy('customer_id');
+
+        $ids = collect(config('lsa.client_customer_ids', []))
+            ->merge($leadAgg->keys())
+            ->merge($accounts->keys())
+            ->unique()
+            ->values();
+
+        $rows = $ids->map(function (string $id) use ($leadAgg, $costAgg, $accounts) {
+            $lead = $leadAgg->get($id);
+            $account = $accounts->get($id);
+            $charged = (int) ($lead->charged_leads ?? 0);
+            $spend = (float) (($costAgg->get($id))->spend ?? 0);
+
+            return [
+                'customer_id' => $id,
+                'name' => $account->name ?? null,
+                'currency' => $account->currency ?? 'GBP',
+                'total_leads' => (int) ($lead->total_leads ?? 0),
+                'charged_leads' => $charged,
+                'spend' => round($spend, 2),
+                'cost_per_lead' => $charged > 0 ? round($spend / $charged, 2) : 0.0,
+                'last_lead_at' => $lead->last_lead_at ?? null,
+            ];
+        })->sortByDesc('total_leads')->values();
+
+        return response()->json($rows);
     }
 
     /**
