@@ -93,3 +93,48 @@ export interface SharedProps {
     flash: Flash;
     [key: string]: unknown;
 }
+
+export interface LsaLead {
+    id: string;
+    customer_id: string;
+    lead_type: string | null;
+    category_id: string | null;
+    service_id: string | null;
+    contact_name: string | null;
+    contact_phone: string | null;
+    contact_email: string | null;
+    lead_status: string | null;
+    charged: boolean;
+    currency: string | null;
+    note: string | null;
+    created_at_google: string | null;
+}
+
+export interface LsaLeadConversation {
+    id: string;
+    lead_id: string;
+    type: string | null;
+    body: string | null;
+    occurred_at: string | null;
+}
+
+export interface LsaLeadDetail extends LsaLead {
+    conversations: LsaLeadConversation[];
+}
+
+export interface LsaStats {
+    total_leads: number;
+    charged_leads: number;
+    total_spend: number;
+    avg_cost_per_lead: number;
+    by_status: Record<string, number>;
+    currency: string;
+}
+
+export interface Paginated<T> {
+    data: T[];
+    total: number;
+    current_page: number;
+    last_page: number;
+    per_page: number;
+}
