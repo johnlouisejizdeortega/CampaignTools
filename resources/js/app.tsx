@@ -5,6 +5,7 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import type { ReactNode } from 'react';
 import { applyStoredTheme } from '@/lib/theme';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 // Apply the saved colour theme as early as possible to avoid a flash.
 applyStoredTheme();
@@ -19,7 +20,11 @@ createInertiaApp({
             import.meta.glob('./Pages/**/*.tsx'),
         ),
     setup({ el, App, props }) {
-        createRoot(el).render(<App {...props} /> as ReactNode);
+        createRoot(el).render(
+            <ErrorBoundary>
+                <App {...props} />
+            </ErrorBoundary> as ReactNode,
+        );
     },
     progress: {
         color: '#18181b',
