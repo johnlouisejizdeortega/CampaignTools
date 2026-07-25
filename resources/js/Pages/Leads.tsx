@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Head } from '@inertiajs/react';
-import { Inbox, Phone, Mail, X, RefreshCw, PhoneCall, MessageSquare, CalendarCheck } from 'lucide-react';
+import { Inbox, Phone, Mail, X, RefreshCw, PhoneCall, MessageSquare, CalendarCheck, Flag } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -30,6 +30,22 @@ const TYPE_ICON: Record<string, typeof Phone> = {
     MESSAGE: MessageSquare,
     BOOKING: CalendarCheck,
 };
+
+// Reasons Google reviews when reporting a bad lead (for a possible credit).
+const REPORT_REASONS: { value: string; label: string }[] = [
+    { value: 'SPAM', label: 'Spam' },
+    { value: 'DUPLICATE', label: 'Duplicate lead' },
+    { value: 'GEO_MISMATCH', label: 'Wrong location' },
+    { value: 'JOB_TYPE_MISMATCH', label: 'Wrong job type' },
+    { value: 'NOT_READY_TO_BOOK', label: 'Not ready to book' },
+    { value: 'SOLICITATION', label: 'Solicitation / sales call' },
+    { value: 'OTHER_DISSATISFIED_REASON', label: 'Other' },
+];
+
+function csrfToken(): string {
+    const m = typeof document !== 'undefined' ? document.cookie.match(/XSRF-TOKEN=([^;]+)/) : null;
+    return m ? decodeURIComponent(m[1]) : '';
+}
 
 interface Filters {
     customer_id: string;
@@ -97,6 +113,28 @@ function StatsHeader({ stats, loading }: { stats: LsaStats | null; loading: bool
 function LeadDrawer({ id, onClose }: { id: string; onClose: () => void }) {
     const [lead, setLead] = useState<LsaLeadDetail | null>(null);
     const [loading, setLoading] = useState(true);
+    const [reason, setReason] = useState('SPAM');
+    const [comment, setComment] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+    const [feedbackError, setFeedbackError] = useState<string | null>(null);
+
+    const sendFeedback = (surveyAnswer: string, withReason: boolean) => {
+        setSubmitting(true);
+        setFeedbackError(null);
+        fetch(`/api/leads/${id}/feedback`, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-XSRF-TOKEN': csrfToken() },
+            body: JSON.stringify(withReason ? { survey_answer: surveyAnswer, reason, comment } : { survey_answer: surveyAnswer }),
+        })
+            .then(async (r) => {
+                const d = await r.json().catch(() => ({}));
+                if (!r.ok || d.status === 'error') throw new Error(d.message || `request failed (${r.status})`);
+                setLead((l) => (l ? { ...l, feedback_submitted: true, feedback_reason: withReason ? reason : surveyAnswer } : l));
+            })
+            .catch((e) => setFeedbackError(e instanceof Error ? e.message : 'could not submit'))
+            .finally(() => setSubmitting(false));
+    };
 
     useEffect(() => {
         let active = true;
@@ -133,6 +171,40 @@ function LeadDrawer({ id, onClose }: { id: string; onClose: () => void }) {
                                 <div className="text-muted-foreground">Type: {lead.lead_type ?? '—'} · Received {when(lead.created_at_google)}</div>
                                 <div className="text-muted-foreground">Charged: {lead.charged ? 'Yes' : 'No'}{lead.category_id ? ` · ${lead.category_id}` : ''}</div>
                                 {lead.note && <div className="rounded-md bg-muted p-3 text-foreground">{lead.note}</div>}
+                            </div>
+
+                            {/* Lead quality / report to Google */}
+                            <div className="mt-6 rounded-md border p-3">
+                                {lead.feedback_submitted ? (
+                                    <p className="flex items-center gap-2 text-sm text-[#1e8e3e]">
+                                        <Flag className="h-4 w-4" /> Feedback submitted to Google{lead.feedback_reason ? ` · ${lead.feedback_reason.replace(/_/g, ' ').toLowerCase()}` : ''}
+                                    </p>
+                                ) : (
+                                    <>
+                                        <h3 className="mb-2 text-sm font-semibold">Report a bad lead</h3>
+                                        <p className="mb-3 text-xs text-muted-foreground">Flag spam, duplicates or mismatches — Google reviews reported leads for a possible credit.</p>
+                                        <div className="flex flex-col gap-2">
+                                            <Select value={reason} onValueChange={setReason}>
+                                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                                <SelectContent>
+                                                    {REPORT_REASONS.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
+                                            {reason === 'OTHER_DISSATISFIED_REASON' && (
+                                                <Input placeholder="Add a note (optional)" value={comment} onChange={(e) => setComment(e.target.value)} />
+                                            )}
+                                            <div className="flex gap-2">
+                                                <Button variant="destructive" size="sm" disabled={submitting} onClick={() => sendFeedback('VERY_DISSATISFIED', true)}>
+                                                    <Flag className="h-4 w-4" /> Report lead
+                                                </Button>
+                                                <Button variant="outline" size="sm" disabled={submitting} onClick={() => sendFeedback('VERY_SATISFIED', false)}>
+                                                    Mark as good
+                                                </Button>
+                                            </div>
+                                            {feedbackError && <p className="text-xs text-destructive">Couldn't submit: {feedbackError}</p>}
+                                        </div>
+                                    </>
+                                )}
                             </div>
 
                             <h3 className="mb-2 mt-6 text-sm font-semibold">Conversation</h3>

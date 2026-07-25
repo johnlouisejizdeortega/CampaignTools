@@ -105,6 +105,8 @@ export interface LsaLead {
     contact_email: string | null;
     lead_status: string | null;
     charged: boolean;
+    feedback_submitted: boolean;
+    feedback_reason: string | null;
     currency: string | null;
     note: string | null;
     created_at_google: string | null;

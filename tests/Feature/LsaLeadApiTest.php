@@ -6,6 +6,7 @@ use App\Models\LsaAccount;
 use App\Models\LsaDailyCost;
 use App\Models\LsaLead;
 use App\Models\LsaLeadConversation;
+use App\Services\GoogleAds\LsaClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -95,6 +96,30 @@ class LsaLeadApiTest extends TestCase
             ->assertJsonPath('0.cost_per_lead', 25)
             ->assertJsonPath('1.customer_id', '2557126397')
             ->assertJsonPath('1.total_leads', 1);
+    }
+
+    public function testReportingALeadRecordsFeedback(): void
+    {
+        // Fake the client so no real Google Ads call is made.
+        $this->app->instance(LsaClient::class, new class extends LsaClient {
+            public function __construct()
+            {
+            }
+
+            public function provideLeadFeedback(string $customerId, string $leadId, string $surveyAnswer, ?string $dissatisfiedReason = null, ?string $comment = null): void
+            {
+            }
+        });
+
+        LsaLead::create(['id' => 'z1', 'customer_id' => '5114179445', 'lead_status' => 'NEW', 'charged' => true]);
+
+        $this->postJson('/api/leads/z1/feedback', ['survey_answer' => 'VERY_DISSATISFIED', 'reason' => 'SPAM'])
+            ->assertOk()
+            ->assertJsonPath('status', 'ok');
+
+        $lead = LsaLead::find('z1');
+        $this->assertTrue($lead->feedback_submitted);
+        $this->assertSame('SPAM', $lead->feedback_reason);
     }
 
     public function testSyncFailsLoudlyWithoutConfiguredAccounts(): void

@@ -22,7 +22,7 @@ class LsaLead extends Model
 
     protected $casts = [
         'charged' => 'boolean',
-        'charge_amount' => 'decimal:2',
+        'feedback_submitted' => 'boolean',
         'created_at_google' => 'datetime',
         'synced_at' => 'datetime',
     ];
