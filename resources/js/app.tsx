@@ -10,6 +10,20 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 // Apply the saved colour theme as early as possible to avoid a flash.
 applyStoredTheme();
 
+// After a new deploy, a browser may still hold hashed chunks from the previous
+// build. When a code-split page chunk fails to load, Vite fires this event —
+// reload once (guarded against a loop) to pull the fresh build instead of
+// showing a blank screen. This is the usual cause of "some pages went white
+// after deploying" while newly-added pages (uncached) still work.
+window.addEventListener('vite:preloadError', () => {
+    const KEY = 'chunk-reloaded-at';
+    const last = Number(sessionStorage.getItem(KEY) || 0);
+    if (Date.now() - last > 10000) {
+        sessionStorage.setItem(KEY, String(Date.now()));
+        window.location.reload();
+    }
+});
+
 const appName = 'Google Ads Dashboard';
 
 createInertiaApp({
