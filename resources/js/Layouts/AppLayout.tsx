@@ -99,17 +99,22 @@ function TopBar({ authenticated, onToggleNav }: { authenticated: boolean; onTogg
                 <ChevronDown className="h-4 w-4" />
             </button>
 
-            <form role="search" onSubmit={submitSearch} className="mx-auto flex w-full max-w-xl items-center gap-2 rounded-full bg-muted px-4 py-2 text-muted-foreground focus-within:ring-2 focus-within:ring-ring">
-                <Search className="h-4 w-4 shrink-0" />
+            <form role="search" onSubmit={submitSearch} className="mx-auto flex w-full max-w-xl items-center gap-2 rounded-full bg-muted pl-2 pr-1 py-1 text-muted-foreground focus-within:ring-2 focus-within:ring-ring">
+                <button type="submit" className="shrink-0 rounded-full p-1.5 hover:bg-background/60" aria-label="Load account" title="Load account">
+                    <Search className="h-4 w-4" />
+                </button>
                 <input
                     ref={searchRef}
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     inputMode="numeric"
                     className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-                    placeholder="Enter a 10-digit Customer ID and press Enter"
+                    placeholder="Enter a 10-digit Customer ID…"
                     aria-label="Load an account by Customer ID"
                 />
+                <button type="submit" className="shrink-0 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground">
+                    Go
+                </button>
             </form>
 
             <div className="flex items-center gap-1">

@@ -167,6 +167,7 @@ export default function Leads() {
     const [leads, setLeads] = useState<Paginated<LsaLead> | null>(null);
     const [stats, setStats] = useState<LsaStats | null>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [selected, setSelected] = useState<string | null>(null);
 
     const queryString = useCallback((extra: Record<string, string> = {}) => {
@@ -182,13 +183,22 @@ export default function Leads() {
 
     const load = useCallback(() => {
         setLoading(true);
-        const opts = { credentials: 'same-origin' as const, headers: { Accept: 'application/json' } };
+        setError(null);
+        const getJson = async (url: string) => {
+            const r = await fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+            if (!r.ok) throw new Error(`request failed (${r.status})`);
+            return r.json();
+        };
         Promise.all([
-            fetch(`/api/leads?${queryString({ page: String(page), per_page: '25' })}`, opts).then((r) => r.json()),
-            fetch(`/api/stats?${queryString()}`, opts).then((r) => r.json()),
+            getJson(`/api/leads?${queryString({ page: String(page), per_page: '25' })}`),
+            getJson(`/api/stats?${queryString()}`),
         ])
             .then(([l, s]) => { setLeads(l); setStats(s); })
-            .catch(() => { setLeads({ data: [], total: 0, current_page: 1, last_page: 1, per_page: 25 }); })
+            .catch((e) => {
+                setLeads({ data: [], total: 0, current_page: 1, last_page: 1, per_page: 25 });
+                setStats(null);
+                setError(e instanceof Error ? e.message : 'could not load leads');
+            })
             .finally(() => setLoading(false));
     }, [queryString, page]);
 
@@ -209,6 +219,13 @@ export default function Leads() {
                     <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
                 </Button>
             </div>
+
+            {error && (
+                <div className="mb-4 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+                    Couldn't load leads ({error}). If you just deployed, make sure the database migration has run
+                    (<code className="rounded bg-background px-1">php artisan migrate</code>) and the sync has run at least once.
+                </div>
+            )}
 
             <StatsHeader stats={stats} loading={loading} />
 
