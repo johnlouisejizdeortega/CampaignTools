@@ -45,6 +45,24 @@ class LsaClient
     }
 
     /**
+     * Fetches an account's display name and currency.
+     *
+     * @return array{name: ?string, currency: ?string}
+     */
+    public function fetchAccountInfo(string $customerId): array
+    {
+        $rows = $this->search($customerId,
+            'SELECT customer.descriptive_name, customer.currency_code FROM customer LIMIT 1'
+        );
+        $c = $rows[0]['customer'] ?? [];
+
+        return [
+            'name' => $c['descriptiveName'] ?? null,
+            'currency' => $c['currencyCode'] ?? null,
+        ];
+    }
+
+    /**
      * Fetches leads created on/after $startDate (Y-m-d) for an account.
      *
      * @return array<int, array<string, mixed>> normalized lead rows

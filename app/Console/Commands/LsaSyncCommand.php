@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\LsaAccount;
 use App\Models\LsaDailyCost;
 use App\Models\LsaLead;
 use App\Models\LsaLeadConversation;
@@ -83,9 +84,25 @@ class LsaSyncCommand extends Command
     {
         $now = now();
 
-        // Daily costs first, so we can attach the account currency to leads.
+        // Account name + currency (best-effort label for the agency overview).
+        $name = null;
+        $currency = null;
+        try {
+            $info = $client->fetchAccountInfo($customerId);
+            $name = $info['name'];
+            $currency = $info['currency'];
+        } catch (Throwable $e) {
+            // Non-fatal: leads still sync without a friendly name.
+        }
+
+        // Daily costs.
         $costs = $client->fetchDailyCosts($customerId, $windowStart, $today);
-        $currency = $costs[0]['currency'] ?? null;
+        $currency = $currency ?: ($costs[0]['currency'] ?? null);
+
+        LsaAccount::updateOrCreate(
+            ['customer_id' => $customerId],
+            ['name' => $name, 'currency' => $currency, 'synced_at' => $now]
+        );
         if ($costs) {
             LsaDailyCost::upsert(
                 array_map(fn (array $c) => [
