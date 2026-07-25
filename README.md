@@ -65,7 +65,7 @@ MySQL; the UI reads only from the DB, so pages load instantly.
    `GOOGLE_ADS_*` credentials):
    ```env
    LSA_CLIENT_CUSTOMER_IDS=1468333005,9987020611   # 10 digits, no dashes
-   LSA_SYNC_WINDOW_DAYS=35
+   LSA_SYNC_WINDOW_DAYS=365
    ```
    Each ID must run an active Local Services campaign.
 2. **Migrate:** `php artisan migrate` (creates `lsa_leads`,

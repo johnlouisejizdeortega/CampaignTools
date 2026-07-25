@@ -20,7 +20,7 @@ return [
 
     // Rolling look-back window (days) re-synced on every run so that status
     // changes on existing leads are captured, not just brand-new leads.
-    'sync_window_days' => (int) env('LSA_SYNC_WINDOW_DAYS', 35),
+    'sync_window_days' => (int) env('LSA_SYNC_WINDOW_DAYS', 365),
 
     // Safety cap on rows pulled per account per sync.
     'max_leads_per_account' => (int) env('LSA_MAX_LEADS_PER_ACCOUNT', 5000),
