@@ -46,4 +46,10 @@ Route::middleware('team.auth')->group(function () {
         'recommendations',
         'GoogleAdsApiController@showRecommendationsAction'
     );
+
+    // LSA lead dashboard — fast JSON API served entirely from the local DB.
+    Route::get('api/leads', 'LsaLeadController@index');
+    Route::get('api/leads/{id}', 'LsaLeadController@show');
+    Route::get('api/stats', 'LsaLeadController@stats');
+    Route::post('api/leads/{id}/feedback', 'LsaLeadController@feedback');
 });

@@ -24,8 +24,12 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')
-        //          ->hourly();
+        // Pull Local Services Ads leads into the local DB. LSA reporting data can
+        // be up to ~30 min stale on Google's side, so 15 min is frequent enough.
+        $schedule->command('lsa:sync')
+            ->everyFifteenMinutes()
+            ->withoutOverlapping()
+            ->runInBackground();
     }
 
     /**
