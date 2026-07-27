@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Head } from '@inertiajs/react';
 import { Inbox, Phone, Mail, X, RefreshCw, PhoneCall, MessageSquare, CalendarCheck, Flag } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
+import ExportMenu from '@/components/ExportMenu';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -282,6 +283,13 @@ export default function Leads() {
     const setFilter = (patch: Partial<Filters>) => { setPage(1); setFilters((f) => ({ ...f, ...patch })); };
     const rows = leads?.data ?? [];
 
+    const exportParams: Record<string, string> = {};
+    if (filters.customer_id) exportParams.customer_id = filters.customer_id;
+    if (filters.lead_status !== 'all') exportParams.lead_status = filters.lead_status;
+    if (filters.charged !== 'all') exportParams.charged = filters.charged;
+    if (filters.from) exportParams.from = filters.from;
+    if (filters.to) exportParams.to = filters.to;
+
     return (
         <AppLayout>
             <Head title="LSA Leads" />
@@ -290,9 +298,12 @@ export default function Leads() {
                 <h1 className="flex items-center gap-2 text-[1.75rem] font-normal tracking-tight text-foreground">
                     <Inbox className="h-6 w-6 text-muted-foreground" /> Local Services leads
                 </h1>
-                <Button variant="outline" size="sm" onClick={load} disabled={loading}>
-                    <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
-                </Button>
+                <div className="flex items-center gap-2">
+                    <ExportMenu baseUrl="/api/leads/export" params={exportParams} />
+                    <Button variant="outline" size="sm" onClick={load} disabled={loading}>
+                        <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
+                    </Button>
+                </div>
             </div>
 
             {error && (

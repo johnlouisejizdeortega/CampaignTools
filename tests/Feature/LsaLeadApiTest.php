@@ -122,6 +122,22 @@ class LsaLeadApiTest extends TestCase
         $this->assertSame('SPAM', $lead->feedback_reason);
     }
 
+    public function testExportsReturnDownloads(): void
+    {
+        LsaAccount::create(['customer_id' => '5114179445', 'name' => 'Hale Heating', 'currency' => 'GBP']);
+        LsaLead::create(['id' => 'e1', 'customer_id' => '5114179445', 'lead_status' => 'NEW', 'charged' => true, 'created_at_google' => '2026-06-12 09:00:00']);
+        LsaDailyCost::create(['customer_id' => '5114179445', 'date' => '2026-06-12', 'cost' => 30.00, 'currency' => 'GBP']);
+
+        $this->get('/api/accounts/export?format=csv')->assertOk()->assertDownload();
+        $this->get('/api/accounts/export?format=xlsx')->assertOk()->assertDownload();
+        $this->get('/api/accounts/export?format=pdf')->assertOk()->assertHeader('content-type', 'application/pdf');
+        $this->get('/api/leads/export?format=csv')->assertOk()->assertDownload();
+        $this->get('/api/leads/export?format=pdf')->assertOk()->assertHeader('content-type', 'application/pdf');
+
+        // Unknown format is rejected.
+        $this->getJson('/api/leads/export?format=bogus')->assertStatus(422);
+    }
+
     public function testSyncFailsLoudlyWithoutConfiguredAccounts(): void
     {
         config(['lsa.client_customer_ids' => []]);

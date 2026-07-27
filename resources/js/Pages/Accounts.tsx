@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import { Building2, RefreshCw } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
+import ExportMenu from '@/components/ExportMenu';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import type { LsaAccountStat } from '@/types';
@@ -62,9 +63,12 @@ export default function Accounts() {
                 <h1 className="flex items-center gap-2 text-[1.75rem] font-normal tracking-tight text-foreground">
                     <Building2 className="h-6 w-6 text-muted-foreground" /> Accounts overview
                 </h1>
-                <Button variant="outline" size="sm" onClick={load} disabled={loading}>
-                    <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
-                </Button>
+                <div className="flex items-center gap-2">
+                    <ExportMenu baseUrl="/api/accounts/export" params={{}} />
+                    <Button variant="outline" size="sm" onClick={load} disabled={loading}>
+                        <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
+                    </Button>
+                </div>
             </div>
 
             {error && (
