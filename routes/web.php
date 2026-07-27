@@ -50,6 +50,8 @@ Route::middleware('team.auth')->group(function () {
     Route::get('leads', fn () => \Inertia\Inertia::render('Leads'));
     Route::get('api/accounts', 'LsaLeadController@accounts');
     Route::get('api/leads', 'LsaLeadController@index');
+    Route::get('api/leads/export', 'LsaExportController@leads');
+    Route::get('api/accounts/export', 'LsaExportController@accounts');
     Route::get('api/leads/{id}', 'LsaLeadController@show');
     Route::get('api/stats', 'LsaLeadController@stats');
     Route::post('api/leads/{id}/feedback', 'LsaLeadController@feedback');
